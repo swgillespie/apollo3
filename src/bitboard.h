@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <cstdint>
+#include <iostream>
+
 #include "types.h"
 
 namespace apollo {
@@ -59,15 +61,37 @@ class Bitboard {
 
   BitboardIterator Iterator() const { return BitboardIterator(this->bits_); }
 
-  constexpr Bitboard operator&(const Bitboard& other) {
+  void Dump(std::ostream& out) const {
+    for (int rank = kRank8; rank >= kRank1; rank--) {
+      for (int file = kFileA; file < kFileLast; file++) {
+        Square sq = static_cast<Square>(rank * 8 + file);
+        if (this->Test(sq)) {
+          out << " 1 ";
+        } else {
+          out << " . ";
+        }
+      }
+      out << "| " << static_cast<char>(rank + 49) << std::endl;
+    }
+    for (int i = kFileA; i < kFileLast; i++) {
+      out << "---";
+    }
+    out << std::endl;
+    for (int i = kFileA; i < kFileLast; i++) {
+      out << " " << static_cast<char>(i + 97) << " ";
+    }
+    out << std::endl;
+  }
+
+  constexpr Bitboard operator&(const Bitboard& other) const {
     return Bitboard(this->bits_ & other.bits_);
   }
 
-  constexpr Bitboard operator|(const Bitboard& other) {
+  constexpr Bitboard operator|(const Bitboard& other) const {
     return Bitboard(this->bits_ | other.bits_);
   }
 
-  constexpr Bitboard operator^(const Bitboard& other) {
+  constexpr Bitboard operator^(const Bitboard& other) const {
     return Bitboard(this->bits_ ^ other.bits_);
   }
 
@@ -75,13 +99,28 @@ class Bitboard {
   uint64_t bits_;
 };
 
-constexpr Bitboard BB_RANK_1 = Bitboard(0x00000000000000FFULL);
-constexpr Bitboard BB_RANK_2 = Bitboard(0x000000000000FF00ULL);
-constexpr Bitboard BB_RANK_3 = Bitboard(0x0000000000FF0000ULL);
-constexpr Bitboard BB_RANK_4 = Bitboard(0x00000000FF000000ULL);
-constexpr Bitboard BB_RANK_5 = Bitboard(0x000000FF00000000ULL);
-constexpr Bitboard BB_RANK_6 = Bitboard(0x0000FF0000000000ULL);
-constexpr Bitboard BB_RANK_7 = Bitboard(0x00FF000000000000ULL);
-constexpr Bitboard BB_RANK_8 = Bitboard(0xFF00000000000000ULL);
+constexpr Bitboard kBBRank1 = Bitboard(0x00000000000000FFULL);
+constexpr Bitboard kBBRank2 = Bitboard(0x000000000000FF00ULL);
+constexpr Bitboard kBBRank3 = Bitboard(0x0000000000FF0000ULL);
+constexpr Bitboard kBBRank4 = Bitboard(0x00000000FF000000ULL);
+constexpr Bitboard kBBRank5 = Bitboard(0x000000FF00000000ULL);
+constexpr Bitboard kBBRank6 = Bitboard(0x0000FF0000000000ULL);
+constexpr Bitboard kBBRank7 = Bitboard(0x00FF000000000000ULL);
+constexpr Bitboard kBBRank8 = Bitboard(0xFF00000000000000ULL);
+
+constexpr Bitboard kBBFileA = Bitboard(0x0101010101010101ULL);
+constexpr Bitboard kBBFileB = Bitboard(0x0202020202020202ULL);
+constexpr Bitboard kBBFileC = Bitboard(0x0404040404040404ULL);
+constexpr Bitboard kBBFileD = Bitboard(0x0808080808080808ULL);
+constexpr Bitboard kBBFileE = Bitboard(0x1010101010101010ULL);
+constexpr Bitboard kBBFileF = Bitboard(0x2020202020202020ULL);
+constexpr Bitboard kBBFileG = Bitboard(0x4040404040404040ULL);
+constexpr Bitboard kBBFileH = Bitboard(0x8080808080808080ULL);
+
+constexpr Bitboard kBBFileAB = kBBFileA | kBBFileB;
+constexpr Bitboard kBBFileGH = kBBFileG | kBBFileH;
+
+constexpr Bitboard kBBRank12 = kBBRank1 | kBBRank2;
+constexpr Bitboard kBBRank78 = kBBRank7 | kBBRank8;
 
 };  // namespace apollo

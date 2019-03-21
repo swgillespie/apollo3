@@ -1,8 +1,10 @@
 #pragma once
 
+#include <array>
+
 namespace apollo {
 
-enum class Square {
+enum Square {
   A1,
   B1,
   C1,
@@ -66,18 +68,48 @@ enum class Square {
   E8,
   F8,
   G8,
-  H8
+  H8,
+  kSquareLast,
 };
 
-enum class Rank { One, Two, Three, Four, Five, Six, Seven, Eight };
+enum Rank {
+  kRank1,
+  kRank2,
+  kRank3,
+  kRank4,
+  kRank5,
+  kRank6,
+  kRank7,
+  kRank8,
+  kRankLast,
+};
 
-enum class File { A, B, C, D, E, F, G, H };
+enum File {
+  kFileA,
+  kFileB,
+  kFileC,
+  kFileD,
+  kFileE,
+  kFileF,
+  kFileG,
+  kFileH,
+  kFileLast
+};
 
 typedef bool Color;
 constexpr Color kWhite = true;
 constexpr Color kBlack = false;
 
-enum class PieceKind { Pawn, Knight, Bishop, Rook, Queen, King };
+enum PieceKind {
+  kPieceFirst = -1,
+  kPawn,
+  kKnight,
+  kBishop,
+  kRook,
+  kQueen,
+  kKing,
+  kPieceLast,
+};
 
 enum CastleStatus {
   kCastleNone = 0x00,
@@ -89,5 +121,35 @@ enum CastleStatus {
   kCastleBlack = 0x0C,
   kCastleAll = 0x0F
 };
+
+inline CastleStatus operator|(CastleStatus lhs, CastleStatus rhs) {
+  return static_cast<CastleStatus>(static_cast<int>(lhs) |
+                                   static_cast<int>(rhs));
+}
+
+inline CastleStatus operator&(CastleStatus lhs, CastleStatus rhs) {
+  return static_cast<CastleStatus>(static_cast<int>(lhs) &
+                                   static_cast<int>(rhs));
+}
+
+inline CastleStatus& operator|=(CastleStatus& lhs, CastleStatus rhs) {
+  lhs = lhs | rhs;
+  return lhs;
+}
+
+enum Direction {
+  kDirectionNorth,
+  kDirectionNorthEast,
+  kDirectionEast,
+  kDirectionSouthEast,
+  kDirectionSouth,
+  kDirectionSouthWest,
+  kDirectionWest,
+  kDirectionNorthWest,
+  kDirectionLast
+};
+
+constexpr std::array<int, kDirectionLast> kDirectionVectors = {8,  9,  1,  -7,
+                                                               -8, -9, -1, 7};
 
 };  // namespace apollo

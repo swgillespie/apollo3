@@ -31,13 +31,13 @@ class Move {
     Move mov = Quiet(src, dst);
     mov.promotion_bit_ = 1;
     switch (kind) {
-      case PieceKind::Bishop:
+      case kBishop:
         mov.special_1_bit_ = 1;
         break;
-      case PieceKind::Rook:
+      case kRook:
         mov.special_0_bit_ = 1;
         break;
-      case PieceKind::Queen:
+      case kQueen:
         mov.special_0_bit_ = 1;
         mov.special_1_bit_ = 1;
         break;
@@ -76,15 +76,15 @@ class Move {
     assert(this->promotion_bit_ &&
            "PromotionPiece only valid on promotion moves");
     if (this->special_0_bit_ && this->special_1_bit_) {
-      return PieceKind::Queen;
+      return kQueen;
     }
     if (this->special_0_bit_) {
-      return PieceKind::Rook;
+      return kRook;
     }
     if (this->special_1_bit_) {
-      return PieceKind::Bishop;
+      return kBishop;
     }
-    return PieceKind::Knight;
+    return kKnight;
   }
 
   bool IsQuiet() const {
@@ -93,6 +93,26 @@ class Move {
   }
 
   bool IsCapture() const { return this->capture_bit_; }
+
+  bool IsNull() const { return Source() == A1 && Destination() == A1; }
+
+  bool IsKingsideCastle() const {
+    return !promotion_bit_ && !capture_bit_ && special_0_bit_ &&
+           !special_1_bit_;
+  }
+
+  bool IsQueensideCastle() const {
+    return !promotion_bit_ && !capture_bit_ && special_0_bit_ && special_1_bit_;
+  }
+
+  bool IsCastle() const { return IsKingsideCastle() || IsQueensideCastle(); }
+
+  bool IsPromotion() const { return promotion_bit_; }
+
+  bool IsDoublePawnPush() const {
+    return !promotion_bit_ && !capture_bit_ && !special_0_bit_ &&
+           special_1_bit_;
+  }
 
  private:
   Move(Square src, Square dst) {

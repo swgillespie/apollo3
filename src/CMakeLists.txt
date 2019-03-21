@@ -1,4 +1,5 @@
 set(APOLLO_LIB_SOURCES
+  attacks.cc
   position.cc
 )
 
@@ -7,6 +8,7 @@ set(APOLLO_SOURCES
 )
 
 set(APOLLO_TEST_SOURCES
+  position_test.cc
   move_test.cc
   bitboard_test.cc
 )
