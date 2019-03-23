@@ -152,4 +152,4 @@ enum Direction {
 constexpr std::array<int, kDirectionLast> kDirectionVectors = {8,  9,  1,  -7,
                                                                -8, -9, -1, 7};
 
-};  // namespace apollo
+}  // namespace apollo

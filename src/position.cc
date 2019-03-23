@@ -185,18 +185,18 @@ Position::Position(std::string_view fen)
 
 void Position::AddPiece(Square sq, Piece piece) {
   assert(!this->PieceAt(sq).has_value() && "square is occupied already");
-  this->boards_by_color_[piece.Color()].Set(sq);
-  size_t offset = piece.Color() == kWhite ? 0 : 6;
-  size_t kind = static_cast<size_t>(piece.Kind());
+  this->boards_by_color_[piece.color()].Set(sq);
+  size_t offset = piece.color() == kWhite ? 0 : 6;
+  size_t kind = static_cast<size_t>(piece.kind());
   this->boards_by_piece_[kind + offset].Set(sq);
 }
 
 void Position::RemovePiece(Square sq) {
   auto existing_piece = this->PieceAt(sq);
   assert(existing_piece.has_value() && "square wasn't occupied");
-  this->boards_by_color_[existing_piece->Color()].Unset(sq);
-  size_t offset = existing_piece->Color() == kWhite ? 0 : 6;
-  size_t kind = static_cast<size_t>(existing_piece->Kind());
+  this->boards_by_color_[existing_piece->color()].Unset(sq);
+  size_t offset = existing_piece->color() == kWhite ? 0 : 6;
+  size_t kind = static_cast<size_t>(existing_piece->kind());
   this->boards_by_piece_[kind + offset].Unset(sq);
 }
 
@@ -259,7 +259,7 @@ void Position::MakeMove(Move mov) {
   RemovePiece(mov.Source());
   AddPiece(mov.Destination(), *moving_piece);
   side_to_move_ = !side_to_move_;
-  if (mov.IsCapture() || moving_piece->Kind() == kPawn) {
+  if (mov.IsCapture() || moving_piece->kind() == kPawn) {
     current_state_.halfmove_clock = 0;
   } else {
     current_state_.halfmove_clock++;
@@ -320,4 +320,4 @@ void Position::Dump(std::ostream& out) const {
   out << std::endl;
 }
 
-};  // namespace apollo
+}  // namespace apollo

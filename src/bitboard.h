@@ -125,4 +125,4 @@ constexpr Bitboard kBBFileGH = kBBFileG | kBBFileH;
 constexpr Bitboard kBBRank12 = kBBRank1 | kBBRank2;
 constexpr Bitboard kBBRank78 = kBBRank7 | kBBRank8;
 
-};  // namespace apollo
+}  // namespace apollo

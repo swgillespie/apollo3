@@ -134,4 +134,4 @@ class Move {
 
 static_assert(sizeof(Move) == sizeof(uint16_t));
 
-};  // namespace apollo
+}  // namespace apollo

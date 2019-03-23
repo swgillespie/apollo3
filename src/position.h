@@ -112,4 +112,4 @@ class Position {
   Color side_to_move_;
 };
 
-};  // namespace apollo
+}  // namespace apollo

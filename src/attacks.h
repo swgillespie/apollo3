@@ -11,4 +11,4 @@ Bitboard RookAttacks(Square sq, Bitboard occupancy);
 Bitboard QueenAttacks(Square sq, Bitboard occupancy);
 Bitboard KnightAttacks(Square sq);
 
-};  // namespace apollo::attacks
+}  // namespace apollo::attacks

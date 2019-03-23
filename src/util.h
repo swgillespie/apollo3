@@ -59,4 +59,4 @@ std::optional<File> CharToFile(char c) {
   }
 }
 
-};  // namespace apollo::util
+}  // namespace apollo::util

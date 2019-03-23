@@ -71,7 +71,6 @@ class RayTable {
             break;
           }
         }
-
         this->table_[sq][dir] = entry;
       };
 
@@ -194,7 +193,7 @@ Bitboard RankAttacks(Square sq, Bitboard occupancy) {
          NegativeRayAttacks(sq, occupancy, kDirectionWest);
 }
 
-};  // anonymous namespace
+}  // anonymous namespace
 
 namespace attacks {
 
@@ -216,6 +215,6 @@ Bitboard QueenAttacks(Square sq, Bitboard occupancy) {
 
 Bitboard KnightAttacks(Square sq) { return kKnightTable.Attacks(sq); }
 
-};  // namespace attacks
+}  // namespace attacks
 
-};  // namespace apollo
+}  // namespace apollo

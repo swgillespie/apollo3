@@ -12,8 +12,8 @@ TEST(PositionTest, BasicMovement) {
   Position p("8/8/8/8/8/4P3/8/8 w - -");
   auto e3 = p.PieceAt(Square::E3);
   ASSERT_TRUE(e3.has_value());
-  ASSERT_EQ(PieceKind::kPawn, e3->Kind());
-  ASSERT_EQ(apollo::kWhite, e3->Color());
+  ASSERT_EQ(PieceKind::kPawn, e3->kind());
+  ASSERT_EQ(apollo::kWhite, e3->color());
 
   p.MakeMove(Move::Quiet(Square::E3, Square::E4));
   ASSERT_FALSE(p.PieceAt(Square::E3).has_value());
