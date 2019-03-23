@@ -13,7 +13,15 @@ Square SquareOf(R rank, F file) {
                              static_cast<int>(file));
 }
 
-std::optional<Rank> CharToRank(char c) {
+inline Square Towards(Square sq, Direction dir) {
+  return static_cast<Square>(static_cast<int>(sq) + kDirectionVectors[dir]);
+}
+
+inline Rank RankOf(Square sq) {
+  return static_cast<Rank>(static_cast<int>(sq) >> 3);
+}
+
+inline std::optional<Rank> CharToRank(char c) {
   switch (c) {
     case '1':
       return kRank1;
@@ -36,7 +44,7 @@ std::optional<Rank> CharToRank(char c) {
   }
 }
 
-std::optional<File> CharToFile(char c) {
+inline std::optional<File> CharToFile(char c) {
   switch (c) {
     case 'a':
       return kFileA;

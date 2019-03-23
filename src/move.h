@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
+
 #include "types.h"
 
 namespace apollo {
@@ -111,6 +113,13 @@ class Move {
 
   bool IsDoublePawnPush() const {
     return !promotion_bit_ && !capture_bit_ && !special_0_bit_ &&
+           special_1_bit_;
+  }
+
+  bool operator==(const Move& other) {
+    return other.promotion_bit_ == promotion_bit_ &&
+           other.capture_bit_ == capture_bit_ && other.source_ == source_ &&
+           other.special_0_bit_ && special_0_bit_ && other.special_1_bit_ &&
            special_1_bit_;
   }
 

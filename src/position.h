@@ -6,6 +6,7 @@
 #include <optional>
 #include <stack>
 #include <string_view>
+#include <vector>
 
 #include "bitboard.h"
 #include "move.h"
@@ -84,12 +85,26 @@ class Position {
     return (this->current_state_.castle_status & mask) == mask;
   }
 
+  Bitboard Pieces(Color color, PieceKind kind) const {
+    int offset = color == kWhite ? 0 : 6;
+    return boards_by_piece_[offset + static_cast<int>(kind)];
+  }
+
+  Bitboard Pieces(Color color) const {
+    return boards_by_color_[color == kWhite ? 0 : 1];
+  }
+
+  Bitboard Pawns(Color color) const { return Pieces(color, kPawn); }
+  Bitboard Knights(Color color) const { return Pieces(color, kKnight); }
+
   void AddPiece(Square sq, Piece piece);
   void RemovePiece(Square sq);
   std::optional<Piece> PieceAt(Square sq) const;
 
   void MakeMove(Move mov);
   void UnmakeMove();
+
+  std::vector<Move> PseudolegalMoves() const;
 
   void Dump(std::ostream& out) const;
 

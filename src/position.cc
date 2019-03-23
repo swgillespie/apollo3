@@ -4,6 +4,7 @@
 #include <string>
 
 #include "attacks.h"
+#include "movegen.h"
 #include "piece.h"
 #include "position.h"
 #include "util.h"
@@ -295,6 +296,14 @@ void Position::UnmakeMove() {
 
   RemovePiece(mov.Destination());
   AddPiece(mov.Source(), *moved_piece);
+}
+
+std::vector<Move> Position::PseudolegalMoves() const {
+  std::vector<Move> moves;
+  moves.reserve(250);
+  movegen::GeneratePseudolegalMoves(*this, moves);
+  moves.shrink_to_fit();
+  return moves;
 }
 
 void Position::Dump(std::ostream& out) const {

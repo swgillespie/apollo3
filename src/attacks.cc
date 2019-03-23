@@ -5,6 +5,48 @@ namespace apollo {
 
 namespace {
 
+class KingTable {
+ public:
+  constexpr KingTable() {
+    for (int i = A1; i < kSquareLast; i++) {
+      Square sq = static_cast<Square>(i);
+      Bitboard board;
+      if (!kBBRank8.Test(sq)) {
+        board.Set(static_cast<Square>(i + 8));
+        if (!kBBFileA.Test(sq)) {
+          board.Set(static_cast<Square>(i + 7));
+        }
+        if (!kBBFileH.Test(sq)) {
+          board.Set(static_cast<Square>(i + 9));
+        }
+      }
+
+      if (!kBBRank1.Test(sq)) {
+        board.Set(static_cast<Square>(i - 8));
+        if (!kBBFileA.Test(sq)) {
+          board.Set(static_cast<Square>(i - 9));
+        }
+        if (!kBBFileH.Test(sq)) {
+          board.Set(static_cast<Square>(i - 7));
+        }
+      }
+
+      if (!kBBFileA.Test(sq)) {
+        board.Set(static_cast<Square>(i - 1));
+      }
+      if (!kBBFileH.Test(sq)) {
+        board.Set(static_cast<Square>(i + 1));
+      }
+      table_[i] = board;
+    }
+  }
+
+  Bitboard Attacks(Square sq) const { return table_[static_cast<size_t>(sq)]; }
+
+ private:
+  std::array<Bitboard, kSquareLast> table_;
+};
+
 class PawnTable {
  public:
   constexpr PawnTable() {
@@ -40,7 +82,7 @@ class PawnTable {
   }
 
  private:
-  std::array<std::array<Bitboard, 2>, 64> table_;
+  std::array<std::array<Bitboard, 2>, kSquareLast> table_;
 };
 
 class RayTable {
@@ -77,7 +119,7 @@ class RayTable {
       populate_dir(kDirectionNorth, kBBRank8);
       populate_dir(kDirectionNorthEast, kBBRank8 | kBBFileH);
       populate_dir(kDirectionEast, kBBFileH);
-      populate_dir(kDirectionSouthEast, kBBRank1 | kBBFileA);
+      populate_dir(kDirectionSouthEast, kBBRank1 | kBBFileH);
       populate_dir(kDirectionSouth, kBBRank1);
       populate_dir(kDirectionSouthWest, kBBRank1 | kBBFileA);
       populate_dir(kDirectionWest, kBBFileA);
@@ -135,6 +177,7 @@ class KnightTable {
   std::array<Bitboard, kSquareLast> table_;
 };
 
+constexpr KingTable kKingTable = KingTable();
 constexpr PawnTable kPawnTable = PawnTable();
 constexpr RayTable kRayTable = RayTable();
 constexpr KnightTable kKnightTable = KnightTable();
@@ -214,6 +257,8 @@ Bitboard QueenAttacks(Square sq, Bitboard occupancy) {
 }
 
 Bitboard KnightAttacks(Square sq) { return kKnightTable.Attacks(sq); }
+
+Bitboard KingAttacks(Square sq) { return kKingTable.Attacks(sq); }
 
 }  // namespace attacks
 

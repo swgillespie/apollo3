@@ -63,6 +63,14 @@ class Bitboard {
 
   BitboardIterator Iterator() const { return BitboardIterator(this->bits_); }
 
+  template <typename Callback>
+  void ForEach(Callback cb) const {
+    for (auto it = Iterator(); it.HasNext();) {
+      Square sq = it.Next();
+      cb(sq);
+    }
+  }
+
   void Dump(std::ostream& out) const {
     for (int rank = kRank8; rank >= kRank1; rank--) {
       for (int file = kFileA; file < kFileLast; file++) {
