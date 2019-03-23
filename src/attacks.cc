@@ -1,8 +1,47 @@
 #include "attacks.h"
+#include <array>
 
 namespace apollo {
 
 namespace {
+
+class PawnTable {
+ public:
+  constexpr PawnTable() {
+    std::array<Color, 2> colors = {{kWhite, kBlack}};
+    for (int i = A1; i < kSquareLast; i++) {
+      Square sq = static_cast<Square>(i);
+      for (auto color : colors) {
+        Bitboard board;
+        Bitboard promo_rank = color == kWhite ? kBBRank8 : kBBRank1;
+        int up_left = color == kWhite ? 7 : -9;
+        int up_right = color == kWhite ? 9 : -7;
+
+        if (promo_rank.Test(sq)) {
+          // No legal moves for this particular pawn. It's generally impossible
+          // for pawns to be on the promotion rank anyway since they should have
+          // been promoted already.
+          continue;
+        }
+
+        if (!kBBFileA.Test(sq)) {
+          board.Set(static_cast<Square>(i + up_left));
+        }
+        if (!kBBFileH.Test(sq)) {
+          board.Set(static_cast<Square>(i + up_right));
+        }
+        table_[i][color == kWhite ? 0 : 1] = board;
+      }
+    }
+  }
+
+  Bitboard Attacks(Square sq, Color side) const {
+    return table_[static_cast<size_t>(sq)][side == kWhite ? 0 : 1];
+  }
+
+ private:
+  std::array<std::array<Bitboard, 2>, 64> table_;
+};
 
 class RayTable {
  public:
@@ -45,6 +84,10 @@ class RayTable {
       populate_dir(kDirectionWest, kBBFileA);
       populate_dir(kDirectionNorthWest, kBBRank8 | kBBFileA);
     }
+  }
+
+  Bitboard Attacks(Square sq, Direction dir) const {
+    return this->table_[static_cast<size_t>(sq)][static_cast<size_t>(dir)];
   }
 
  private:
@@ -93,12 +136,83 @@ class KnightTable {
   std::array<Bitboard, kSquareLast> table_;
 };
 
-// constexpr RayTable kRayTable = RayTable();
+constexpr PawnTable kPawnTable = PawnTable();
+constexpr RayTable kRayTable = RayTable();
 constexpr KnightTable kKnightTable = KnightTable();
+
+/**
+ * Calculates the attacks of a positive ray starting at the given square, going
+ * the given direction, and with the given board occupancy. The final square of
+ * a ray is set as an attack even if the square is occupied, because it is
+ * possible that the occupant there is an enemy piece and the move is a legal
+ * attack move.
+ *
+ * A ray is positive if its direction vector is positive.
+ */
+Bitboard PositiveRayAttacks(Square sq, Bitboard occupancy, Direction dir) {
+  assert(kDirectionVectors[dir] > 0);
+  Bitboard attacks = kRayTable.Attacks(sq, dir);
+  uint64_t blocker = (attacks & occupancy).Bits();
+  uint64_t blocking_square = __builtin_ctzll(blocker);
+  Bitboard blocking_ray =
+      kRayTable.Attacks(static_cast<Square>(blocking_square), dir);
+  return attacks ^ blocking_ray;
+}
+
+Bitboard NegativeRayAttacks(Square sq, Bitboard occupancy, Direction dir) {
+  assert(kDirectionVectors[dir] < 0);
+  Bitboard attacks = kRayTable.Attacks(sq, dir);
+  uint64_t blocker = (attacks & occupancy).Bits();
+  uint64_t blocking_square;
+  if (blocker == 0) {
+    blocking_square = 64;
+  } else {
+    blocking_square = 63 - __builtin_clzll(blocker);
+  }
+  Bitboard blocking_ray =
+      kRayTable.Attacks(static_cast<Square>(blocking_square), dir);
+  return attacks ^ blocking_ray;
+}
+
+Bitboard DiagonalAttacks(Square sq, Bitboard occupancy) {
+  return PositiveRayAttacks(sq, occupancy, kDirectionNorthWest) |
+         NegativeRayAttacks(sq, occupancy, kDirectionSouthEast);
+}
+
+Bitboard AntidiagonalAttacks(Square sq, Bitboard occupancy) {
+  return PositiveRayAttacks(sq, occupancy, kDirectionNorthEast) |
+         NegativeRayAttacks(sq, occupancy, kDirectionSouthWest);
+}
+
+Bitboard FileAttacks(Square sq, Bitboard occupancy) {
+  return PositiveRayAttacks(sq, occupancy, kDirectionNorth) |
+         NegativeRayAttacks(sq, occupancy, kDirectionSouth);
+}
+
+Bitboard RankAttacks(Square sq, Bitboard occupancy) {
+  return PositiveRayAttacks(sq, occupancy, kDirectionEast) |
+         NegativeRayAttacks(sq, occupancy, kDirectionWest);
+}
 
 };  // anonymous namespace
 
 namespace attacks {
+
+Bitboard PawnAttacks(Square sq, Color side) {
+  return kPawnTable.Attacks(sq, side);
+}
+
+Bitboard BishopAttacks(Square sq, Bitboard occupancy) {
+  return DiagonalAttacks(sq, occupancy) | AntidiagonalAttacks(sq, occupancy);
+}
+
+Bitboard RookAttacks(Square sq, Bitboard occupancy) {
+  return FileAttacks(sq, occupancy) | RankAttacks(sq, occupancy);
+}
+
+Bitboard QueenAttacks(Square sq, Bitboard occupancy) {
+  return BishopAttacks(sq, occupancy) | RookAttacks(sq, occupancy);
+}
 
 Bitboard KnightAttacks(Square sq) { return kKnightTable.Attacks(sq); }
 

@@ -1,5 +1,7 @@
 #include <cctype>
 #include <optional>
+#include <sstream>
+#include <string>
 
 #include "attacks.h"
 #include "piece.h"
@@ -110,8 +112,35 @@ class FenParser {
           util::SquareOf(*maybeRank, *maybeFile);
     }
 
+    if (!PeekEof()) {
+      return;
+    }
+
+    Eat(' ');
     // Halfmove Clock
+    std::stringstream halfmove_stream;
+    while (true) {
+      char c = Peek();
+      if (!std::isdigit(c)) {
+        break;
+      }
+      halfmove_stream << c;
+      Advance();
+    }
+    pos.current_state_.halfmove_clock = std::stoi(halfmove_stream.str());
+
+    Eat(' ');
     // Fullmove Clock
+    std::stringstream fullmove_stream;
+    while (true) {
+      auto c = PeekEof();
+      if (!c || !std::isdigit(*c)) {
+        break;
+      }
+      fullmove_stream << *c;
+      Advance();
+    }
+    pos.current_state_.fullmove_clock = std::stoi(fullmove_stream.str());
   }
 
  private:

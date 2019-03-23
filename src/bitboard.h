@@ -16,7 +16,7 @@ class BitboardIterator {
 
   Square Next() {
     assert(this->bits_ != 0);
-    uint8_t next = __builtin_ctzl(this->bits_);
+    uint8_t next = __builtin_ctzll(this->bits_);
     this->bits_ &= this->bits_ - 1;
     return static_cast<Square>(next);
   }
@@ -58,6 +58,8 @@ class Bitboard {
   }
 
   constexpr bool Empty() const { return this->bits_ == 0; }
+
+  constexpr uint64_t Bits() const { return this->bits_; }
 
   BitboardIterator Iterator() const { return BitboardIterator(this->bits_); }
 

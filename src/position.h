@@ -50,7 +50,7 @@ class Position {
   /**
    * Constructs a new Position by parsing the given FEN string.
    */
-  Position(std::string_view fen);
+  explicit Position(std::string_view fen);
 
   /**
    * Disallow copying of Positions.
