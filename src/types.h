@@ -96,9 +96,9 @@ enum File {
   kFileLast
 };
 
-typedef bool Color;
-constexpr Color kWhite = true;
-constexpr Color kBlack = false;
+enum Color { kWhite, kBlack, kColorLast };
+
+inline Color operator!(Color c) { return c == kWhite ? kBlack : kWhite; }
 
 enum PieceKind {
   kPieceFirst = -1,

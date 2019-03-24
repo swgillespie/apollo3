@@ -50,10 +50,9 @@ class KingTable {
 class PawnTable {
  public:
   constexpr PawnTable() {
-    std::array<Color, 2> colors = {{kWhite, kBlack}};
     for (int i = A1; i < kSquareLast; i++) {
       Square sq = static_cast<Square>(i);
-      for (auto color : colors) {
+      for (auto color : {kWhite, kBlack}) {
         Bitboard board;
         Bitboard promo_rank = color == kWhite ? kBBRank8 : kBBRank1;
         int up_left = color == kWhite ? 7 : -9;
@@ -72,17 +71,17 @@ class PawnTable {
         if (!kBBFileH.Test(sq)) {
           board.Set(static_cast<Square>(i + up_right));
         }
-        table_[i][color == kWhite ? 0 : 1] = board;
+        table_[i][color] = board;
       }
     }
   }
 
   Bitboard Attacks(Square sq, Color side) const {
-    return table_[static_cast<size_t>(sq)][side == kWhite ? 0 : 1];
+    return table_[static_cast<size_t>(sq)][side];
   }
 
  private:
-  std::array<std::array<Bitboard, 2>, kSquareLast> table_;
+  std::array<std::array<Bitboard, kColorLast>, kSquareLast> table_;
 };
 
 class RayTable {
