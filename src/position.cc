@@ -186,7 +186,7 @@ Position::Position(std::string_view fen)
 
 void Position::AddPiece(Square sq, Piece piece) {
   assert(!this->PieceAt(sq).has_value() && "square is occupied already");
-  this->boards_by_color_[piece.color()].Set(sq);
+  this->boards_by_color_[piece.color() == kWhite ? 0 : 1].Set(sq);
   size_t offset = piece.color() == kWhite ? 0 : 6;
   size_t kind = static_cast<size_t>(piece.kind());
   this->boards_by_piece_[kind + offset].Set(sq);
@@ -195,7 +195,7 @@ void Position::AddPiece(Square sq, Piece piece) {
 void Position::RemovePiece(Square sq) {
   auto existing_piece = this->PieceAt(sq);
   assert(existing_piece.has_value() && "square wasn't occupied");
-  this->boards_by_color_[existing_piece->color()].Unset(sq);
+  this->boards_by_color_[existing_piece->color() == kWhite ? 0 : 1].Unset(sq);
   size_t offset = existing_piece->color() == kWhite ? 0 : 6;
   size_t kind = static_cast<size_t>(existing_piece->kind());
   this->boards_by_piece_[kind + offset].Unset(sq);
@@ -204,10 +204,10 @@ void Position::RemovePiece(Square sq) {
 std::optional<Piece> Position::PieceAt(Square sq) const {
   size_t board_offset;
   Color color;
-  if (this->boards_by_color_[kWhite].Test(sq)) {
+  if (this->boards_by_color_[0].Test(sq)) {
     board_offset = 0;
     color = kWhite;
-  } else if (this->boards_by_color_[kBlack].Test(sq)) {
+  } else if (this->boards_by_color_[1].Test(sq)) {
     board_offset = 6;
     color = kBlack;
   } else {

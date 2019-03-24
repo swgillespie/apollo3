@@ -1,4 +1,5 @@
 #include "movegen.h"
+#include "attacks.h"
 #include "util.h"
 
 namespace apollo {
@@ -34,10 +35,27 @@ void GeneratePawnMoves(const Position& pos, std::vector<Move>& moves) {
     }
 
     // Double pawn pushes, for pawns originating on the starting rank.
-    // TODO
+    if (util::RankOf(pawn) == start_rank) {
+      Square two_push_target = util::Towards(target, pawn_dir);
+      if (!pieces.Test(target) && !pieces.Test(two_push_target)) {
+        moves.push_back(Move::DoublePawnPush(pawn, two_push_target));
+      }
+    }
 
     // Non-en-passant capturing moves.
-    // TODO
+    attacks::PawnAttacks(pawn, color).ForEach([&](Square target) {
+      if (enemy_pieces.Test(target)) {
+        assert(!allied_pieces.Test(target));
+        if (util::RankOf(target) == promo_rank) {
+          moves.push_back(Move::PromotionCapture(pawn, target, kKnight));
+          moves.push_back(Move::PromotionCapture(pawn, target, kBishop));
+          moves.push_back(Move::PromotionCapture(pawn, target, kRook));
+          moves.push_back(Move::PromotionCapture(pawn, target, kQueen));
+        } else {
+          moves.push_back(Move::Capture(pawn, target));
+        }
+      }
+    });
 
     // En passant moves.
     // TODO

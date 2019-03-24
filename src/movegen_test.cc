@@ -30,10 +30,44 @@ void AssertHasMove(const Position& pos, First mov, Rest... rest) {
   AssertHasMoveInSet(move_set, mov, rest...);
 }
 
+template <typename First>
+void AssertDoesNotHaveMoveInSet(const std::unordered_set<Move>& move_set,
+                                First mov) {
+  ASSERT_TRUE(move_set.find(mov) == move_set.end());
+}
+
+template <typename First, typename... Rest>
+void AssertDoesNotHaveMoveInSet(const std::unordered_set<Move>& move_set,
+                                First mov, Rest... rest) {
+  ASSERT_TRUE(move_set.find(mov) == move_set.end());
+  AssertDoesNotHaveMoveInSet(move_set, rest...);
+}
+
+template <typename First, typename... Rest>
+void AssertDoesNotHaveMove(const Position& pos, First mov, Rest... rest) {
+  std::vector<Move> moves = pos.PseudolegalMoves();
+  std::unordered_set<Move> move_set(moves.begin(), moves.end());
+  AssertDoesNotHaveMoveInSet(move_set, mov, rest...);
+}
+
 TEST(MoveGenTest, PawnSmoke) {
   Position p("8/8/8/8/4P3/8/8/8 w - -");
   ASSERT_NO_FATAL_FAILURE(
       AssertHasMove(p, Move::Quiet(Square::E4, Square::E5)));
+}
+
+TEST(MoveGenTest, PawnDoublePush) {
+  Position p("8/8/8/8/8/8/4P3/8 w - -");
+  ASSERT_NO_FATAL_FAILURE(
+      AssertHasMove(p, Move::DoublePawnPush(Square::E2, Square::E4)));
+}
+
+TEST(MoveGenTest, PawnCapture) {
+  Position p("8/8/8/8/5p2/4P3/8/8 w - -");
+  ASSERT_NO_FATAL_FAILURE(
+      AssertHasMove(p, Move::Capture(Square::E3, Square::F4)));
+  ASSERT_NO_FATAL_FAILURE(
+      AssertDoesNotHaveMove(p, Move::Capture(Square::E3, Square::D4)));
 }
 
 TEST(MoveGenTest, PawnSmokeBlack) {
