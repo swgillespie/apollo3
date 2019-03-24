@@ -51,9 +51,3 @@ TEST(PositionTest, FenParseHalfmove) {
   ASSERT_EQ(5, p.HalfmoveClock());
   ASSERT_EQ(6, p.FullmoveClock());
 }
-
-TEST(PositionDeathTest, InvalidMoveSourceSquare) {
-  Position p("8/8/8/8/8/4P3/8/8 w - -");
-  Move m = Move::Quiet(Square::A4, Square::A5);
-  ASSERT_DEATH(p.MakeMove(m), "no piece at move source square");
-}
