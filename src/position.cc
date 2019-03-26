@@ -335,6 +335,9 @@ void Position::UnmakeMove() {
   current_state_ = irreversible_state_.top();
   irreversible_state_.pop();
 
+  // Reverse the side to move.
+  side_to_move_ = !side_to_move_;
+
   assert(current_state_.move.has_value() && "no move available to unmake");
   Move mov = *current_state_.move;
   assert(!mov.IsCapture() && "NYI: Capture");
@@ -383,6 +386,63 @@ void Position::Dump(std::ostream& out) const {
     out << " " << static_cast<char>(i + 97) << " ";
   }
   out << std::endl;
+}
+
+std::string Position::AsFen() const {
+  std::stringstream ss;
+  for (int rank = kRank8; rank >= kRank1; rank--) {
+    int empty_squares = 0;
+    for (int file = kFileA; file < kFileLast; file++) {
+      Square sq = util::SquareOf(rank, file);
+      std::optional<Piece> piece_at_square = PieceAt(sq);
+      if (piece_at_square) {
+        if (empty_squares != 0) {
+          ss << empty_squares;
+        }
+        ss << piece_at_square->AsChar();
+        empty_squares = 0;
+      } else {
+        empty_squares++;
+      }
+    }
+
+    if (empty_squares != 0) {
+      ss << empty_squares;
+    }
+
+    if (rank != kRank1) {
+      ss << "/";
+    }
+  }
+
+  ss << " ";
+  if (SideToMove() == kWhite) {
+    ss << "w";
+  } else {
+    ss << "b";
+  }
+  ss << " ";
+  if (CanCastleKingside(kWhite)) {
+    ss << "K";
+  }
+  if (CanCastleQueenside(kWhite)) {
+    ss << "Q";
+  }
+  if (CanCastleKingside(kBlack)) {
+    ss << "k";
+  }
+  if (CanCastleQueenside(kBlack)) {
+    ss << "q";
+  }
+  ss << " ";
+  auto ep_square = EnPassantSquare();
+  if (ep_square) {
+    ss << util::SquareString(*ep_square);
+  } else {
+    ss << "-";
+  }
+  ss << " " << HalfmoveClock() << " " << FullmoveClock();
+  return ss.str();
 }
 
 }  // namespace apollo

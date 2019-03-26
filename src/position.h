@@ -101,6 +101,8 @@ class Position {
   Bitboard Queens(Color color) const { return Pieces(color, kQueen); }
   Bitboard Kings(Color color) const { return Pieces(color, kKing); }
 
+  std::string AsFen() const;
+
   Bitboard SquaresAttacking(Color to_move, Square sq) const;
   bool IsCheck(Color to_move) const;
 

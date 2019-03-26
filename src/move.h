@@ -2,8 +2,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <sstream>
+#include <string>
 
 #include "types.h"
+#include "util.h"
 
 namespace apollo {
 
@@ -117,6 +120,31 @@ class Move {
   bool IsDoublePawnPush() const {
     return !bitset_.promotion_bit_ && !bitset_.capture_bit_ &&
            !bitset_.special_0_bit_ && bitset_.special_1_bit_;
+  }
+
+  std::string AsUci() const {
+    std::stringstream str;
+    str << util::SquareString(Source());
+    str << util::SquareString(Destination());
+    if (IsPromotion()) {
+      switch (PromotionPiece()) {
+        case kBishop:
+          str << "b";
+          break;
+        case kKnight:
+          str << "n";
+          break;
+        case kRook:
+          str << "r";
+          break;
+        case kQueen:
+          str << "q";
+          break;
+        default:
+          break;
+      }
+    }
+    return str.str();
   }
 
   bool operator==(const Move other) const { return other.bits_ == bits_; }

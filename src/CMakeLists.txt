@@ -5,6 +5,7 @@ set(APOLLO_LIB_SOURCES
 )
 
 set(APOLLO_SOURCES
+  main_perft.cc
   main.cc
 )
 
@@ -18,8 +19,8 @@ set(APOLLO_TEST_SOURCES
 
 add_library(apollo ${APOLLO_LIB_SOURCES})
 
-add_executable(apollo_cli ${APOLLO_SOURCES})
-target_link_libraries(apollo_cli apollo)
+add_executable(apollo3 ${APOLLO_SOURCES})
+target_link_libraries(apollo3 apollo)
 
 add_executable(apollo_test ${APOLLO_TEST_SOURCES})
 target_link_libraries(apollo_test apollo gtest gtest_main)

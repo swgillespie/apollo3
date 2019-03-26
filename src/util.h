@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 
 #include "piece.h"
 #include "types.h"
@@ -19,6 +20,16 @@ inline Square Towards(Square sq, Direction dir) {
 
 inline Rank RankOf(Square sq) {
   return static_cast<Rank>(static_cast<int>(sq) >> 3);
+}
+
+inline File FileOf(Square sq) {
+  return static_cast<File>(static_cast<int>(sq) & 7);
+}
+
+inline std::string SquareString(Square sq) {
+  const char ranks[] = {'1', '2', '3', '4', '5', '6', '7', '8'};
+  const char files[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+  return {files[FileOf(sq)], ranks[RankOf(sq)]};
 }
 
 inline std::optional<Rank> CharToRank(char c) {
