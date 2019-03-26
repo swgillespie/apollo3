@@ -93,3 +93,13 @@ TEST(MoveGenTest, PawnPromoSmokeBlack) {
                     Move::Promotion(Square::E2, Square::E1, apollo::kRook),
                     Move::Promotion(Square::E2, Square::E1, apollo::kQueen)));
 }
+
+TEST(MoveGenTest, KnightSmoke) {
+  Position p("8/8/4n3/8/3N4/8/8/8 w - -");
+  ASSERT_NO_FATAL_FAILURE(AssertHasMove(
+      p, Move::Quiet(Square::D4, Square::F5),
+      Move::Quiet(Square::D4, Square::F3), Move::Quiet(Square::D4, Square::E2),
+      Move::Quiet(Square::D4, Square::C2), Move::Quiet(Square::D4, Square::B3),
+      Move::Quiet(Square::D4, Square::B5), Move::Quiet(Square::D4, Square::C6),
+      Move::Capture(Square::D4, Square::E6)));
+}

@@ -96,6 +96,13 @@ class Position {
 
   Bitboard Pawns(Color color) const { return Pieces(color, kPawn); }
   Bitboard Knights(Color color) const { return Pieces(color, kKnight); }
+  Bitboard Bishops(Color color) const { return Pieces(color, kBishop); }
+  Bitboard Rooks(Color color) const { return Pieces(color, kRook); }
+  Bitboard Queens(Color color) const { return Pieces(color, kQueen); }
+  Bitboard Kings(Color color) const { return Pieces(color, kKing); }
+
+  Bitboard SquaresAttacking(Color to_move, Square sq) const;
+  bool IsCheck(Color to_move) const;
 
   void AddPiece(Square sq, Piece piece);
   void RemovePiece(Square sq);

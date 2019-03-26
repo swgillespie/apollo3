@@ -8,7 +8,7 @@
 namespace apollo {
 
 class Move {
-  friend class std::hash<Move>;
+  friend struct std::hash<Move>;
 
  public:
   static Move Quiet(Square src, Square dst) { return Move(src, dst); }

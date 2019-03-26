@@ -62,12 +62,53 @@ void GeneratePawnMoves(const Position& pos, std::vector<Move>& moves) {
   });
 }
 
+void GenerateKnightMoves(const Position& pos, std::vector<Move>& moves) {
+  Color color = pos.SideToMove();
+  Bitboard enemy_pieces = pos.Pieces(!color);
+  Bitboard allied_pieces = pos.Pieces(color);
+  pos.Knights(color).ForEach([&](Square knight) {
+    attacks::KnightAttacks(knight).ForEach([&](Square target) {
+      if (enemy_pieces.Test(target)) {
+        moves.push_back(Move::Capture(knight, target));
+      } else if (!allied_pieces.Test(target)) {
+        moves.push_back(Move::Quiet(knight, target));
+      }
+    });
+  });
+}
+
+template <typename BoardCallback, typename AttackCallback>
+void GenerateSlidingMoves(const Position& pos, std::vector<Move>& moves,
+                          BoardCallback bc, AttackCallback atk) {
+  Color color = pos.SideToMove();
+  Bitboard enemy_pieces = pos.Pieces(!color);
+  Bitboard allied_pieces = pos.Pieces(color);
+  bc(color).ForEach([&](Square piece) {
+    atk(piece, enemy_pieces | allied_pieces).ForEach([&](Square target) {
+      // In theory, we only need to test the end of rays for occupancy,
+      // but this works.
+      if (enemy_pieces.Test(target)) {
+        moves.push_back(Move::Capture(piece, target));
+      } else if (!allied_pieces.Test(target)) {
+        moves.push_back(Move::Quiet(piece, target));
+      }
+    });
+  });
+}
+
 }  // anonymous namespace
 
 namespace movegen {
 
 void GeneratePseudolegalMoves(const Position& pos, std::vector<Move>& moves) {
   GeneratePawnMoves(pos, moves);
+  GenerateKnightMoves(pos, moves);
+  GenerateSlidingMoves(pos, moves, [&](Color c) { return pos.Bishops(c); },
+                       attacks::BishopAttacks);
+  GenerateSlidingMoves(pos, moves, [&](Color c) { return pos.Rooks(c); },
+                       attacks::RookAttacks);
+  GenerateSlidingMoves(pos, moves, [&](Color c) { return pos.Queens(c); },
+                       attacks::QueenAttacks);
 }
 
 }  // namespace movegen

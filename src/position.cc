@@ -224,6 +224,56 @@ std::optional<Piece> Position::PieceAt(Square sq) const {
   __builtin_unreachable();
 }
 
+Bitboard Position::SquaresAttacking(Color to_move, Square target) const {
+  Bitboard occupancy = Pieces(kWhite) | Pieces(kBlack);
+  Bitboard attacks;
+  Queens(to_move).ForEach([&](Square queen) {
+    if (attacks::QueenAttacks(queen, occupancy).Test(target)) {
+      attacks.Set(queen);
+    }
+  });
+  Rooks(to_move).ForEach([&](Square rook) {
+    if (attacks::RookAttacks(rook, occupancy).Test(target)) {
+      attacks.Set(rook);
+    }
+  });
+  Bishops(to_move).ForEach([&](Square bishop) {
+    if (attacks::BishopAttacks(bishop, occupancy).Test(target)) {
+      attacks.Set(bishop);
+    }
+  });
+  Knights(to_move).ForEach([&](Square knight) {
+    if (attacks::KnightAttacks(knight).Test(target)) {
+      attacks.Set(knight);
+    }
+  });
+  Pawns(to_move).ForEach([&](Square pawn) {
+    if (attacks::PawnAttacks(pawn, to_move).Test(target)) {
+      attacks.Set(pawn);
+    }
+  });
+  Kings(to_move).ForEach([&](Square king) {
+    if (attacks::KingAttacks(king).Test(target)) {
+      attacks.Set(king);
+    }
+  });
+  if (current_state_.en_passant_square &&
+      target == *current_state_.en_passant_square) {
+    // TODO(sean)
+  }
+  return attacks;
+}
+
+bool Position::IsCheck(Color to_move) const {
+  bool check = false;
+  Kings(to_move).ForEach([&](Square king) {
+    if (!SquaresAttacking(!to_move, king).Empty()) {
+      check = true;
+    }
+  });
+  return check;
+}
+
 void Position::MakeMove(Move mov) {
   // MakeMove operates by maintaining a stack of the data that is irreversibly
   // lost whenever a move is made and maintaining a single copy of the data that
@@ -255,10 +305,17 @@ void Position::MakeMove(Move mov) {
   assert(!mov.IsCapture() && "NYI: Capture");
   assert(!mov.IsCastle() && "NYI: Castle");
   assert(!mov.IsPromotion() && "NYI: Promotion");
-  assert(!mov.IsDoublePawnPush() && "NYI: Double Pawn");
 
   RemovePiece(mov.Source());
   AddPiece(mov.Destination(), *moving_piece);
+  if (mov.IsDoublePawnPush()) {
+    // Double-pawn pushes set the en passant square.
+    Direction ep_dir =
+        SideToMove() == kWhite ? kDirectionSouth : kDirectionNorth;
+    Square ep_sq = util::Towards(mov.Destination(), ep_dir);
+    current_state_.en_passant_square = ep_sq;
+  }
+
   side_to_move_ = !side_to_move_;
   if (mov.IsCapture() || moving_piece->kind() == kPawn) {
     current_state_.halfmove_clock = 0;
@@ -283,7 +340,6 @@ void Position::UnmakeMove() {
   assert(!mov.IsCapture() && "NYI: Capture");
   assert(!mov.IsCastle() && "NYI: Castle");
   assert(!mov.IsPromotion() && "NYI: Promotion");
-  assert(!mov.IsDoublePawnPush() && "NYI: Double Pawn");
 
   // The rest of UnmakeMove proceeds in reverse of MakeMove; find the piece at
   // the destination square, remove it, replace it with the piece that was

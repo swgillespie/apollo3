@@ -13,6 +13,7 @@ set(APOLLO_TEST_SOURCES
   move_test.cc
   bitboard_test.cc
   movegen_test.cc
+  perft_test.cc
 )
 
 add_library(apollo ${APOLLO_LIB_SOURCES})

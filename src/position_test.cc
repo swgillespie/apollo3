@@ -51,3 +51,13 @@ TEST(PositionTest, FenParseHalfmove) {
   ASSERT_EQ(5, p.HalfmoveClock());
   ASSERT_EQ(6, p.FullmoveClock());
 }
+
+TEST(PositionCheckTests, CheckSmoke) {
+  Position p("8/8/3r4/8/8/8/8/3K4 w - -");
+  ASSERT_TRUE(p.IsCheck(apollo::kWhite));
+}
+
+TEST(PositionCheckTests, CheckSmokeNeg) {
+  Position p("8/8/4r3/8/8/8/8/3K4 w - -");
+  ASSERT_FALSE(p.IsCheck(apollo::kWhite));
+}
