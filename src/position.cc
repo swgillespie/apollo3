@@ -302,9 +302,25 @@ void Position::MakeMove(Move mov) {
 
   auto moving_piece = PieceAt(mov.Source());
   assert(moving_piece.has_value() && "no piece at move source square");
-  assert(!mov.IsCapture() && "NYI: Capture");
   assert(!mov.IsCastle() && "NYI: Castle");
   assert(!mov.IsPromotion() && "NYI: Promotion");
+
+  if (mov.IsCapture()) {
+    assert(!mov.IsEnPassant() && "NYI: En Passant");
+    Square target_square = mov.Destination();
+    auto captured_piece = PieceAt(target_square);
+    assert(captured_piece.has_value() && "no piece at capture square");
+
+    // Record the captured piece in the previous move's entry. When unwinding
+    // the move stack (unmaking a move), we'll look at the previous move's entry
+    // to determine what piece was captured.
+    //
+    // Note that this requires there to be at least one irreverisble state
+    // already on the stack, but that's guaranteed because it's impossible for
+    // the first move of a game of chess to be a capture.
+    irreversible_state_.top().last_capture_ = captured_piece->kind();
+    RemovePiece(target_square);
+  }
 
   RemovePiece(mov.Source());
   AddPiece(mov.Destination(), *moving_piece);
@@ -340,7 +356,6 @@ void Position::UnmakeMove() {
 
   assert(current_state_.move.has_value() && "no move available to unmake");
   Move mov = *current_state_.move;
-  assert(!mov.IsCapture() && "NYI: Capture");
   assert(!mov.IsCastle() && "NYI: Castle");
   assert(!mov.IsPromotion() && "NYI: Promotion");
 
@@ -354,6 +369,12 @@ void Position::UnmakeMove() {
   assert(moved_piece.has_value() && "no piece at move destination square");
 
   RemovePiece(mov.Destination());
+  if (mov.IsCapture()) {
+    assert(current_state_.last_capture_.has_value() &&
+           "unmaking capture with no last capture piece");
+    AddPiece(mov.Destination(),
+             Piece(side_to_move_, *current_state_.last_capture_));
+  }
   AddPiece(mov.Source(), *moved_piece);
 }
 

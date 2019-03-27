@@ -46,6 +46,44 @@ TEST(PositionTest, BasicUnmake) {
   ASSERT_EQ(6, p.FullmoveClock());
 }
 
+TEST(PositionTest, BasicCapture) {
+  Position p("rnbqkbnr/ppppp1pp/8/5p2/8/6N1/PPPPPPPP/RNBQKB1R w KQkq - 5 6");
+  p.MakeMove(Move::Capture(Square::G3, Square::F5));
+
+  // There's a white knight at F5.
+  auto knight = p.PieceAt(Square::F5);
+  ASSERT_TRUE(knight.has_value());
+  ASSERT_EQ(apollo::kWhite, knight->color());
+  ASSERT_EQ(apollo::kKnight, knight->kind());
+
+  // There's not a white knight at G3
+  ASSERT_FALSE(p.PieceAt(Square::G3).has_value());
+
+  // The halfmove clock reset due to a capture.
+  ASSERT_EQ(0, p.HalfmoveClock());
+}
+
+TEST(PositionTest, BasicUnmakeCapture) {
+  Position p("rnbqkbnr/ppppp1pp/8/5p2/8/6N1/PPPPPPPP/RNBQKB1R w KQkq - 5 6");
+  p.MakeMove(Move::Capture(Square::G3, Square::F5));
+  p.UnmakeMove();
+
+  // The white knight has been restored to G3
+  auto knight = p.PieceAt(Square::G3);
+  ASSERT_TRUE(knight.has_value());
+  ASSERT_EQ(apollo::kWhite, knight->color());
+  ASSERT_EQ(apollo::kKnight, knight->kind());
+
+  // The black pawn has been restored to F5
+  auto pawn = p.PieceAt(Square::F5);
+  ASSERT_TRUE(pawn.has_value());
+  ASSERT_EQ(apollo::kBlack, pawn->color());
+  ASSERT_EQ(apollo::kKnight, pawn->kind());
+
+  // The halfmove clock has been reset to 5
+  ASSERT_EQ(5, p.HalfmoveClock());
+}
+
 TEST(PositionTest, FenParseHalfmove) {
   Position p("8/8/8/8/8/4P3/8/8 w - - 5 6");
   ASSERT_EQ(5, p.HalfmoveClock());

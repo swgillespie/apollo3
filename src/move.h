@@ -122,6 +122,11 @@ class Move {
            !bitset_.special_0_bit_ && bitset_.special_1_bit_;
   }
 
+  bool IsEnPassant() const {
+    return !bitset_.promotion_bit_ && bitset_.capture_bit_ &&
+           !bitset_.special_0_bit_ && bitset_.special_1_bit_;
+  }
+
   std::string AsUci() const {
     std::stringstream str;
     str << util::SquareString(Source());
