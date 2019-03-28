@@ -3,6 +3,7 @@
 
 #include "attacks.h"
 #include "bitboard.h"
+#include "log.h"
 #include "move.h"
 #include "position.h"
 
@@ -21,6 +22,9 @@ Usage:
 [[noreturn]] void PerftCommand(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]) {
+  apollo::LogEnable(apollo::kLogTrace);
+  TLOG() << "logging enabled";
+
   /*
   Position p("rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR w KQkq -");
   p.Dump(std::cout);
