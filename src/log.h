@@ -59,7 +59,6 @@ class CheckLogMessage : public LogMessage {
   virtual ~CheckLogMessage() override {
     std::cerr << "[" << function_ << " line " << line_ << "] check \"" << cond_
               << "\" failed: " << stream_.str() << std::endl;
-    ;
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
     // Goofy hack to make asan print out a stack trace when a check fails.
@@ -85,16 +84,32 @@ class VoidMessage {
 inline std::atomic<LogLevel> kEnabledLog = kLogCheck;
 static_assert(std::atomic<LogLevel>::is_always_lock_free);
 
-inline bool LogTraceEnabled() { return kEnabledLog <= kLogTrace; }
-inline bool LogDebugEnabled() { return kEnabledLog <= kLogDebug; }
-inline bool LogInfoEnabled() { return kEnabledLog <= kLogInfo; }
+inline bool LogTraceEnabled() {
+  return kEnabledLog.load(std::memory_order_relaxed) <= kLogTrace;
+}
+inline bool LogDebugEnabled() {
+  return kEnabledLog.load(std::memory_order_relaxed) <= kLogDebug;
+}
+inline bool LogInfoEnabled() {
+  return kEnabledLog.load(std::memory_order_relaxed) <= kLogInfo;
+}
 inline bool LogCheckEnabled() { return true; }
-inline void LogEnable(LogLevel level) { kEnabledLog = level; }
+inline void LogEnable(LogLevel level) {
+  kEnabledLog.store(level, std::memory_order_relaxed);
+}
 
 }  // namespace apollo
 
+#ifdef NDEBUG
+#define CHECK_ENABLED() false
+#define TRACE_ENABLED() false
+#else
+#define CHECK_ENABLED() ::apollo::LogCheckEnabled()
+#define TRACE_ENABLED() ::apollo::LogTraceEnabled()
+#endif  // NDEBUG
+
 #define TLOG()                    \
-  !(::apollo::LogTraceEnabled())  \
+  !(TRACE_ENABLED())              \
       ? (void)0                   \
       : ::apollo::VoidMessage() & \
             ::apollo::TraceLogMessage(__PRETTY_FUNCTION__, __LINE__).Stream()
@@ -119,7 +134,7 @@ inline void LogEnable(LogLevel level) { kEnabledLog = level; }
             ::apollo::InfoLogMessage(__PRETTY_FUNCTION__, __LINE__).Stream()
 
 #define CHECK(cond)                                                         \
-  (!::apollo::LogCheckEnabled() || (cond))                                  \
+  (!CHECK_ENABLED() || (cond))                                              \
       ? (void)0                                                             \
       : ::apollo::VoidMessage() &                                           \
             ::apollo::CheckLogMessage(__PRETTY_FUNCTION__, __LINE__, #cond) \

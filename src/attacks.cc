@@ -1,5 +1,7 @@
-#include "attacks.h"
 #include <array>
+
+#include "attacks.h"
+#include "log.h"
 
 namespace apollo {
 
@@ -191,7 +193,7 @@ constexpr KnightTable kKnightTable = KnightTable();
  * A ray is positive if its direction vector is positive.
  */
 Bitboard PositiveRayAttacks(Square sq, Bitboard occupancy, Direction dir) {
-  assert(kDirectionVectors[dir] > 0);
+  CHECK(kDirectionVectors[dir] > 0) << "direction vector must be positive";
   Bitboard attacks = kRayTable.Attacks(sq, dir);
   uint64_t blocker = (attacks & occupancy).Bits();
   uint64_t blocking_square = blocker == 0 ? 64 : __builtin_ctzll(blocker);
@@ -201,7 +203,7 @@ Bitboard PositiveRayAttacks(Square sq, Bitboard occupancy, Direction dir) {
 }
 
 Bitboard NegativeRayAttacks(Square sq, Bitboard occupancy, Direction dir) {
-  assert(kDirectionVectors[dir] < 0);
+  CHECK(kDirectionVectors[dir] < 0) << "direction vector must be negative";
   Bitboard attacks = kRayTable.Attacks(sq, dir);
   uint64_t blocker = (attacks & occupancy).Bits();
   uint64_t blocking_square;

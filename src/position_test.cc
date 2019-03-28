@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "log.h"
 #include "move.h"
 #include "position.h"
 
@@ -78,10 +79,92 @@ TEST(PositionTest, BasicUnmakeCapture) {
   auto pawn = p.PieceAt(Square::F5);
   ASSERT_TRUE(pawn.has_value());
   ASSERT_EQ(apollo::kBlack, pawn->color());
-  ASSERT_EQ(apollo::kKnight, pawn->kind());
+  ASSERT_EQ(apollo::kPawn, pawn->kind());
 
   // The halfmove clock has been reset to 5
   ASSERT_EQ(5, p.HalfmoveClock());
+}
+
+TEST(PositionTest, UnmakeKingsideCastle) {
+  Position p("8/8/8/8/8/8/8/4K2R w KQkq - 0 1");
+  p.MakeMove(Move::KingsideCastle(Square::E1, Square::G1));
+
+  auto king = p.PieceAt(Square::G1);
+  ASSERT_TRUE(king.has_value());
+  ASSERT_EQ(apollo::kWhite, king->color());
+  ASSERT_EQ(apollo::kKing, king->kind());
+
+  auto rook = p.PieceAt(Square::F1);
+  ASSERT_TRUE(rook.has_value());
+  ASSERT_EQ(apollo::kWhite, rook->color());
+  ASSERT_EQ(apollo::kRook, rook->kind());
+
+  p.UnmakeMove();
+  ASSERT_TRUE(p.CanCastleKingside(apollo::kWhite));
+  auto prev_king = p.PieceAt(Square::E1);
+  ASSERT_TRUE(prev_king.has_value());
+  ASSERT_EQ(apollo::kWhite, prev_king->color());
+  ASSERT_EQ(apollo::kKing, prev_king->kind());
+
+  auto prev_rook = p.PieceAt(Square::H1);
+  ASSERT_TRUE(prev_rook.has_value());
+  ASSERT_EQ(apollo::kWhite, prev_rook->color());
+  ASSERT_EQ(apollo::kRook, prev_rook->kind());
+
+  ASSERT_FALSE(p.PieceAt(Square::G1).has_value());
+  ASSERT_FALSE(p.PieceAt(Square::F1).has_value());
+}
+
+TEST(PositionTest, EnPassant) {
+  Position p("8/8/3Pp3/8/8/8/8/8 w - e7 0 1");
+  ASSERT_EQ(Square::E7, *p.EnPassantSquare());
+
+  p.MakeMove(Move::EnPassant(Square::D6, Square::E7));
+  auto white_pawn = p.PieceAt(Square::E7);
+  ASSERT_TRUE(white_pawn.has_value());
+  ASSERT_EQ(apollo::kWhite, white_pawn->color());
+  ASSERT_EQ(apollo::kPawn, white_pawn->kind());
+  ASSERT_FALSE(p.PieceAt(Square::E6).has_value());
+  ASSERT_FALSE(p.EnPassantSquare().has_value());
+
+  p.UnmakeMove();
+  auto prev_white_pawn = p.PieceAt(Square::D6);
+  ASSERT_TRUE(prev_white_pawn.has_value());
+  ASSERT_EQ(apollo::kWhite, prev_white_pawn->color());
+  ASSERT_EQ(apollo::kPawn, prev_white_pawn->kind());
+
+  auto black_pawn = p.PieceAt(Square::E6);
+  ASSERT_TRUE(black_pawn.has_value());
+  ASSERT_EQ(apollo::kBlack, black_pawn->color());
+  ASSERT_EQ(apollo::kPawn, black_pawn->kind());
+  ASSERT_EQ(Square::E7, *p.EnPassantSquare());
+}
+
+TEST(PositionTest, MovingInvalidatesCastle) {
+  Position p("8/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+  ASSERT_TRUE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_TRUE(p.CanCastleQueenside(apollo::kWhite));
+
+  p.MakeMove(Move::Quiet(Square::A1, Square::A2));
+  ASSERT_TRUE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_FALSE(p.CanCastleQueenside(apollo::kWhite));
+  p.UnmakeMove();
+  ASSERT_TRUE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_TRUE(p.CanCastleQueenside(apollo::kWhite));
+
+  p.MakeMove(Move::Quiet(Square::H1, Square::H2));
+  ASSERT_FALSE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_TRUE(p.CanCastleQueenside(apollo::kWhite));
+  p.UnmakeMove();
+  ASSERT_TRUE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_TRUE(p.CanCastleQueenside(apollo::kWhite));
+
+  p.MakeMove(Move::Quiet(Square::E1, Square::E2));
+  ASSERT_FALSE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_FALSE(p.CanCastleQueenside(apollo::kWhite));
+  p.UnmakeMove();
+  ASSERT_TRUE(p.CanCastleKingside(apollo::kWhite));
+  ASSERT_TRUE(p.CanCastleQueenside(apollo::kWhite));
 }
 
 TEST(PositionTest, FenParseHalfmove) {

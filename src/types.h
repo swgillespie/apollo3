@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <iostream>
 
 namespace apollo {
 
@@ -99,6 +100,16 @@ enum File {
 enum Color { kWhite, kBlack, kColorLast };
 
 inline Color operator!(Color c) { return c == kWhite ? kBlack : kWhite; }
+inline std::ostream& operator<<(std::ostream& os, Color c) {
+  if (c == kWhite) {
+    os << "w";
+  } else if (c == kBlack) {
+    os << "b";
+  } else {
+    os << "?";
+  }
+  return os;
+}
 
 enum PieceKind {
   kPieceFirst = -1,
@@ -111,7 +122,34 @@ enum PieceKind {
   kPieceLast,
 };
 
-enum CastleStatus {
+inline std::ostream& operator<<(std::ostream& os, PieceKind pk) {
+  switch (pk) {
+    case kPawn:
+      os << "p";
+      break;
+    case kKnight:
+      os << "n";
+      break;
+    case kBishop:
+      os << "b";
+      break;
+    case kRook:
+      os << "r";
+      break;
+    case kQueen:
+      os << "q";
+      break;
+    case kKing:
+      os << "k";
+      break;
+    default:
+      os << "?";
+      break;
+  }
+  return os;
+}
+
+enum CastleStatus : int {
   kCastleNone = 0x00,
   kCastleWhiteKingside = 0x01,
   kCastleWhiteQueenside = 0x02,
@@ -135,6 +173,15 @@ inline CastleStatus operator&(CastleStatus lhs, CastleStatus rhs) {
 inline CastleStatus& operator|=(CastleStatus& lhs, CastleStatus rhs) {
   lhs = lhs | rhs;
   return lhs;
+}
+
+inline CastleStatus& operator&=(CastleStatus& lhs, CastleStatus rhs) {
+  lhs = lhs & rhs;
+  return lhs;
+}
+
+inline CastleStatus operator~(CastleStatus op) {
+  return static_cast<CastleStatus>(~static_cast<int>(op));
 }
 
 enum Direction {

@@ -22,9 +22,8 @@ Usage:
 [[noreturn]] void PerftCommand(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]) {
-  apollo::LogEnable(apollo::kLogTrace);
+  apollo::LogEnable(apollo::kLogInfo);
   TLOG() << "logging enabled";
-
   /*
   Position p("rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR w KQkq -");
   p.Dump(std::cout);

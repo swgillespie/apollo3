@@ -72,6 +72,10 @@ class FenParser {
       Advance();
     } else {
       for (int i = 0; i < 4; i++) {
+        if (Peek() == ' ') {
+          break;
+        }
+
         switch (Peek()) {
           case 'K':
             pos.current_state_.castle_status |= kCastleWhiteKingside;
@@ -185,7 +189,7 @@ Position::Position(std::string_view fen)
 }
 
 void Position::AddPiece(Square sq, Piece piece) {
-  assert(!this->PieceAt(sq).has_value() && "square is occupied already");
+  CHECK(!this->PieceAt(sq).has_value()) << "square is occupied already";
   this->boards_by_color_[piece.color()].Set(sq);
   size_t offset = piece.color() == kWhite ? 0 : 6;
   size_t kind = static_cast<size_t>(piece.kind());
@@ -194,7 +198,7 @@ void Position::AddPiece(Square sq, Piece piece) {
 
 void Position::RemovePiece(Square sq) {
   auto existing_piece = this->PieceAt(sq);
-  assert(existing_piece.has_value() && "square wasn't occupied");
+  CHECK(existing_piece.has_value()) << "square wasn't occupied";
   this->boards_by_color_[existing_piece->color()].Unset(sq);
   size_t offset = existing_piece->color() == kWhite ? 0 : 6;
   size_t kind = static_cast<size_t>(existing_piece->kind());
@@ -220,7 +224,7 @@ std::optional<Piece> Position::PieceAt(Square sq) const {
     }
   }
 
-  assert(!"PieceAt fallthrough, bitboards are invalid");
+  CHECK(false) << "PieceAt fallthrough, bitboards are invalid";
   __builtin_unreachable();
 }
 
@@ -301,15 +305,22 @@ void Position::MakeMove(Move mov) {
   }
 
   auto moving_piece = PieceAt(mov.Source());
-  assert(moving_piece.has_value() && "no piece at move source square");
-  assert(!mov.IsCastle() && "NYI: Castle");
-  assert(!mov.IsPromotion() && "NYI: Promotion");
+  CHECK(moving_piece.has_value()) << "no piece at move source square";
+  CHECK(!mov.IsPromotion()) << "NYI: Promotion";
 
   if (mov.IsCapture()) {
-    assert(!mov.IsEnPassant() && "NYI: En Passant");
     Square target_square = mov.Destination();
+    if (mov.IsEnPassant()) {
+      // En-passant moves are the only case when the piece being captured does
+      // not lie on the same square as the move destination.
+      Direction ep_dir =
+          side_to_move_ == kWhite ? kDirectionSouth : kDirectionNorth;
+      CHECK(current_state_.en_passant_square) << "EP-move without EP-square";
+      target_square = util::Towards(*current_state_.en_passant_square, ep_dir);
+    }
+
     auto captured_piece = PieceAt(target_square);
-    assert(captured_piece.has_value() && "no piece at capture square");
+    CHECK(captured_piece.has_value()) << "no piece at capture square";
 
     // Record the captured piece in the previous move's entry. When unwinding
     // the move stack (unmaking a move), we'll look at the previous move's entry
@@ -322,6 +333,36 @@ void Position::MakeMove(Move mov) {
     RemovePiece(target_square);
   }
 
+  // Reset the EP-square. Either we took the EP-move and have already handled
+  // it, or we didn't and it's no longer valid.
+  current_state_.en_passant_square = {};
+  if (mov.IsCastle()) {
+    // Castles are encoded based on the king's start and stop position.
+    // Notably, the rook is not at the move's destination square.
+    Direction post_castle_dir, pre_castle_dir;
+    int num_squares;
+    if (mov.IsKingsideCastle()) {
+      post_castle_dir = kDirectionWest;
+      pre_castle_dir = kDirectionEast;
+      num_squares = 1;
+    } else {
+      post_castle_dir = kDirectionEast;
+      pre_castle_dir = kDirectionWest;
+      num_squares = 2;
+    }
+
+    Square new_rook_square = util::Towards(mov.Destination(), post_castle_dir);
+    Square rook_square =
+        static_cast<Square>(static_cast<int>(mov.Destination()) +
+                            kDirectionVectors[pre_castle_dir] * num_squares);
+
+    auto rook = PieceAt(rook_square);
+    CHECK(rook.has_value() && rook->kind() == kRook)
+        << "rook not at destination";
+    RemovePiece(rook_square);
+    AddPiece(new_rook_square, *rook);
+  }
+
   RemovePiece(mov.Source());
   AddPiece(mov.Destination(), *moving_piece);
   if (mov.IsDoublePawnPush()) {
@@ -330,6 +371,41 @@ void Position::MakeMove(Move mov) {
         SideToMove() == kWhite ? kDirectionSouth : kDirectionNorth;
     Square ep_sq = util::Towards(mov.Destination(), ep_dir);
     current_state_.en_passant_square = ep_sq;
+  }
+
+  // Re-calculate our castling status. Side to move may have invalidated their
+  // castle rights by moving their king or rooks.
+  if (moving_piece->kind() == kRook) {
+    // Moving a rook invalidates the castle on that rook's side of the board.
+    Square kingside_rook, queenside_rook;
+    if (side_to_move_ == kWhite) {
+      kingside_rook = Square::H1;
+      queenside_rook = Square::A1;
+    } else {
+      kingside_rook = Square::H8;
+      queenside_rook = Square::A8;
+    }
+
+    if (CanCastleQueenside(side_to_move_) && mov.Source() == queenside_rook) {
+      // Move of the queenside rook. Can't castle queenside anymore.
+      TLOG() << "white can no longer castle queenside (rook move)";
+      CastleStatus mask = side_to_move_ == kWhite ? kCastleWhiteQueenside
+                                                  : kCastleBlackQueenside;
+      current_state_.castle_status &= ~mask;
+    }
+
+    if (CanCastleKingside(side_to_move_) && mov.Source() == kingside_rook) {
+      // Move of the kingside rook. Can't castle kingside anymore.
+      TLOG() << "white can no longer castle kingside (rook move)";
+      CastleStatus mask =
+          side_to_move_ == kWhite ? kCastleWhiteKingside : kCastleBlackKingside;
+      current_state_.castle_status &= ~mask;
+    }
+  } else if (moving_piece->kind() == kKing) {
+    // Moving a king invalidates the castle on both sides.
+    TLOG() << "white can no longer castle (king move)";
+    CastleStatus mask = side_to_move_ == kWhite ? kCastleWhite : kCastleBlack;
+    current_state_.castle_status &= ~mask;
   }
 
   side_to_move_ = !side_to_move_;
@@ -347,17 +423,17 @@ void Position::MakeMove(Move mov) {
 void Position::UnmakeMove() {
   // To unmake the move, we must first restore the previous move's irreversible
   // state and then undo the reversible aspects of the move.
-  assert(!irreversible_state_.empty() && "no moves to unmake");
+  CHECK(!irreversible_state_.empty()) << "no moves to unmake";
   current_state_ = irreversible_state_.top();
   irreversible_state_.pop();
 
   // Reverse the side to move.
   side_to_move_ = !side_to_move_;
 
-  assert(current_state_.move.has_value() && "no move available to unmake");
+  CHECK(current_state_.move.has_value()) << "no move available to unmake";
   Move mov = *current_state_.move;
-  assert(!mov.IsCastle() && "NYI: Castle");
-  assert(!mov.IsPromotion() && "NYI: Promotion");
+  TLOG() << "Unmaking move: " << mov;
+  CHECK(!mov.IsPromotion()) << "NYI: Promotion";
 
   // The rest of UnmakeMove proceeds in reverse of MakeMove; find the piece at
   // the destination square, remove it, replace it with the piece that was
@@ -366,16 +442,54 @@ void Position::UnmakeMove() {
   // Since "the piece that was captured" is irreverisble state, we grab that
   // from current state (which we just restored).
   auto moved_piece = PieceAt(mov.Destination());
-  assert(moved_piece.has_value() && "no piece at move destination square");
+  CHECK(moved_piece.has_value()) << "no piece at move destination square";
+  TLOG() << "piece that moved: " << moved_piece->kind();
 
   RemovePiece(mov.Destination());
   if (mov.IsCapture()) {
-    assert(current_state_.last_capture_.has_value() &&
-           "unmaking capture with no last capture piece");
-    AddPiece(mov.Destination(),
-             Piece(side_to_move_, *current_state_.last_capture_));
+    CHECK(current_state_.last_capture_.has_value())
+        << "unmaking capture with no last capture piece";
+    TLOG() << "last captured piece was " << *current_state_.last_capture_;
+    TLOG() << "side to move: " << side_to_move_;
+
+    Square captured_piece_square = mov.Destination();
+    if (mov.IsEnPassant()) {
+      // Like in MakeMove, en passant is the only move where we have to put the
+      // piece back somewhere other than the move destination.
+      Direction ep_dir =
+          side_to_move_ == kWhite ? kDirectionSouth : kDirectionNorth;
+      captured_piece_square = util::Towards(mov.Destination(), ep_dir);
+    }
+
+    AddPiece(captured_piece_square,
+             Piece(!side_to_move_, *current_state_.last_capture_));
   }
   AddPiece(mov.Source(), *moved_piece);
+
+  if (mov.IsCastle()) {
+    // If this move was a castle, we need to put the rook in the right spot.
+    // If this is a kingside castle, the rook needs to be one square to the
+    // east of the king. If this is a queenside castle, the rook needs to be
+    // two squares to the west of the king.
+    //
+    // In both cases, mov.Destination() refers to the location of the king,
+    // so we can calculate the rook position based on that.
+    Square rook_square, target_rook_square;
+    if (mov.IsKingsideCastle()) {
+      rook_square = util::Towards(mov.Destination(), kDirectionWest);
+      target_rook_square = util::Towards(mov.Destination(), kDirectionEast);
+    } else {
+      rook_square = util::Towards(mov.Destination(), kDirectionEast);
+      target_rook_square = util::Towards(
+          util::Towards(mov.Destination(), kDirectionWest), kDirectionWest);
+    }
+
+    auto rook = PieceAt(rook_square);
+    CHECK(rook.has_value() && rook->kind() == kRook)
+        << "rook not present at expected location";
+    RemovePiece(rook_square);
+    AddPiece(target_rook_square, *rook);
+  }
 }
 
 std::vector<Move> Position::PseudolegalMoves() const {

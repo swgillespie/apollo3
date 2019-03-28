@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cassert>
 #include <cstdint>
 #include <iostream>
 
+#include "log.h"
 #include "types.h"
 
 namespace apollo {
@@ -15,7 +15,7 @@ class BitboardIterator {
   bool HasNext() const { return this->bits_ != 0; }
 
   Square Next() {
-    assert(this->bits_ != 0);
+    CHECK(this->bits_ != 0) << "called Next() when HasNext() is false";
     uint8_t next = __builtin_ctzll(this->bits_);
     this->bits_ &= this->bits_ - 1;
     return static_cast<Square>(next);

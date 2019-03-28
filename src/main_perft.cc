@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -81,7 +80,6 @@ int Perft(Position& pos, int depth, json& document) {
 }
 
 [[noreturn]] void PerftCommand(int argc, const char* argv[]) {
-  assert(strcmp(argv[1], "perft") == 0);
   ParseOptions(argc, argv);
   if (!position_fen) {
     std::cout << "no FEN position provided" << std::endl;

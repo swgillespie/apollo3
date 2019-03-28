@@ -19,7 +19,8 @@ void GeneratePawnMoves(const Position& pos, std::vector<Move>& moves) {
 
   pos.Pawns(color).ForEach([&](Square pawn) {
     // Pawns shouldn't be on the promotion rank.
-    assert(util::RankOf(pawn) != promo_rank);
+    CHECK(util::RankOf(pawn) != promo_rank)
+        << "Pawns shouldn't be on the promotion rank";
     Square target = util::Towards(pawn, pawn_dir);
 
     // Non-capturing moves.
@@ -45,7 +46,8 @@ void GeneratePawnMoves(const Position& pos, std::vector<Move>& moves) {
     // Non-en-passant capturing moves.
     attacks::PawnAttacks(pawn, color).ForEach([&](Square target) {
       if (enemy_pieces.Test(target)) {
-        assert(!allied_pieces.Test(target));
+        CHECK(!allied_pieces.Test(target))
+            << "Square can't be occupied by both allied and enemy pieces";
         if (util::RankOf(target) == promo_rank) {
           moves.push_back(Move::PromotionCapture(pawn, target, kKnight));
           moves.push_back(Move::PromotionCapture(pawn, target, kBishop));
@@ -58,7 +60,18 @@ void GeneratePawnMoves(const Position& pos, std::vector<Move>& moves) {
     });
 
     // En passant moves.
-    // TODO
+    if (pos.EnPassantSquare()) {
+      Square ep_square = *pos.EnPassantSquare();
+      // Would this move be a normal legal attack for this pawn?
+      if (attacks::PawnAttacks(pawn, color).Test(ep_square)) {
+        // If so, the attack square is directly behind the pawn that was pushed.
+        Square attack_sq = util::Towards(ep_square, ep_dir);
+        CHECK(enemy_pieces.Test(attack_sq))
+            << "square behind EP-square unoccupied";
+        CHECK(!pieces.Test(ep_square)) << "EP-square should be unoccupied";
+        moves.push_back(Move::EnPassant(pawn, ep_square));
+      }
+    }
   });
 }
 
@@ -96,6 +109,56 @@ void GenerateSlidingMoves(const Position& pos, std::vector<Move>& moves,
   });
 }
 
+void GenerateKingMoves(const Position& pos, std::vector<Move>& moves) {
+  Color color = pos.SideToMove();
+  Bitboard enemy_pieces = pos.Pieces(!color);
+  Bitboard allied_pieces = pos.Pieces(color);
+  pos.Kings(color).ForEach([&](Square king) {
+    attacks::KingAttacks(king).ForEach([&](Square target) {
+      if (enemy_pieces.Test(target)) {
+        moves.push_back(Move::Capture(king, target));
+      } else if (!allied_pieces.Test(target)) {
+        moves.push_back(Move::Quiet(king, target));
+      }
+    });
+
+    if (pos.IsCheck(color)) {
+      // No castling out of check.
+      return;
+    }
+
+    Bitboard all_pieces = allied_pieces | enemy_pieces;
+    if (pos.CanCastleKingside(color)) {
+      Square one = util::Towards(king, kDirectionEast);
+      Square two = util::Towards(one, kDirectionEast);
+      if (!all_pieces.Test(one) && !all_pieces.Test(two)) {
+        // The king moves across both squares one and two and it is illegal to
+        // castle through check. We can only proceed if no enemy piece is
+        // attacking the squares the king travels upon.
+        if (pos.SquaresAttacking(!color, one).Empty() &&
+            pos.SquaresAttacking(!color, two).Empty()) {
+          moves.push_back(Move::KingsideCastle(king, two));
+        }
+      }
+    }
+
+    if (pos.CanCastleQueenside(color)) {
+      Square one = util::Towards(king, kDirectionWest);
+      Square two = util::Towards(one, kDirectionWest);
+      Square three = util::Towards(two, kDirectionWest);
+      if (!all_pieces.Test(one) && !all_pieces.Test(two) &&
+          !all_pieces.Test(three)) {
+        // Square three can be checked, but it can't be occupied. The rook
+        // travels across square three, but the king does not.
+        if (pos.SquaresAttacking(!color, one).Empty() &&
+            pos.SquaresAttacking(!color, two).Empty()) {
+          moves.push_back(Move::QueensideCastle(king, two));
+        }
+      }
+    }
+  });
+}
+
 }  // anonymous namespace
 
 namespace movegen {
@@ -109,6 +172,7 @@ void GeneratePseudolegalMoves(const Position& pos, std::vector<Move>& moves) {
                        attacks::RookAttacks);
   GenerateSlidingMoves(pos, moves, [&](Color c) { return pos.Queens(c); },
                        attacks::QueenAttacks);
+  GenerateKingMoves(pos, moves);
 }
 
 }  // namespace movegen

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <sstream>
 #include <string>
 
+#include "log.h"
 #include "types.h"
 #include "util.h"
 
@@ -80,8 +81,8 @@ class Move {
   Square Destination() const { return static_cast<Square>(bitset_.dest_); }
 
   PieceKind PromotionPiece() const {
-    assert(bitset_.promotion_bit_ &&
-           "PromotionPiece only valid on promotion moves");
+    CHECK(bitset_.promotion_bit_)
+        << "PromotionPiece only valid on promotion moves";
     if (bitset_.special_0_bit_ && bitset_.special_1_bit_) {
       return kQueen;
     }
@@ -181,6 +182,11 @@ class Move {
 };
 
 static_assert(sizeof(Move) == sizeof(uint16_t));
+
+inline std::ostream& operator<<(std::ostream& os, const Move& mov) {
+  os << mov.AsUci();
+  return os;
+}
 
 }  // namespace apollo
 
