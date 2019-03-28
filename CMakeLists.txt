@@ -31,7 +31,7 @@ endif(NOT googletest_POPULATED)
 
 if(APOLLO_CLANG_UBSAN)
   message(STATUS "Building with undefined behavior sanitizers")
-  add_compile_options(-fsanitize=ubsan)
+  add_compile_options(-fsanitize=undefined)
 endif(APOLLO_CLANG_UBSAN)
 
 if(APOLLO_CLANG_ASAN)

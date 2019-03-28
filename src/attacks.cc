@@ -194,7 +194,7 @@ Bitboard PositiveRayAttacks(Square sq, Bitboard occupancy, Direction dir) {
   assert(kDirectionVectors[dir] > 0);
   Bitboard attacks = kRayTable.Attacks(sq, dir);
   uint64_t blocker = (attacks & occupancy).Bits();
-  uint64_t blocking_square = __builtin_ctzll(blocker);
+  uint64_t blocking_square = blocker == 0 ? 64 : __builtin_ctzll(blocker);
   Bitboard blocking_ray =
       kRayTable.Attacks(static_cast<Square>(blocking_square), dir);
   return attacks ^ blocking_ray;
