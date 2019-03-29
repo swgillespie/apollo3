@@ -61,6 +61,8 @@ class Bitboard {
 
   constexpr uint64_t Bits() const { return this->bits_; }
 
+  constexpr int Count() const { return __builtin_popcountll(bits_); }
+
   BitboardIterator Iterator() const { return BitboardIterator(this->bits_); }
 
   template <typename Callback>

@@ -278,21 +278,77 @@ bool Position::IsCheck(Color to_move) const {
   return check;
 }
 
+bool Position::IsAbsolutelyPinned(Color to_move, Square sq) const {
+  auto maybe_pinned_piece = PieceAt(sq);
+  if (!maybe_pinned_piece) {
+    // If there's no piece on the requested square, it's not pinned.
+    return false;
+  }
+
+  Bitboard attacks_on_square = SquaresAttacking(to_move, sq);
+  if (attacks_on_square.Empty()) {
+    // Nobody is attacking this square? Not a pin.
+    return false;
+  }
+
+  Bitboard kings = Kings(!to_move);
+  Bitboard all_pieces_except_pin = Pieces(kWhite) | Pieces(kBlack);
+  all_pieces_except_pin.Unset(sq);
+  for (auto it = attacks_on_square.Iterator(); it.HasNext();) {
+    Square attacker = it.Next();
+    Piece piece = PieceAt(attacker).value();
+    switch (piece.kind()) {
+      case kPawn:
+      case kKnight:
+      case kKing:
+        // Pawns, knights, and kings can't participate in pins.
+        continue;
+      case kBishop:
+        if (!(attacks::BishopAttacks(attacker, all_pieces_except_pin) & kings)
+                 .Empty()) {
+          TLOG() << "bishop on square " << util::SquareString(attacker)
+                 << " absolutely pins " << sq;
+          return true;
+        }
+        break;
+      case kRook:
+        if (!(attacks::RookAttacks(attacker, all_pieces_except_pin) & kings)
+                 .Empty()) {
+          TLOG() << "rook on square " << util::SquareString(attacker)
+                 << " absolutely pins " << util::SquareString(sq);
+          return true;
+        }
+        break;
+      case kQueen:
+        if (!(attacks::QueenAttacks(attacker, all_pieces_except_pin) & kings)
+                 .Empty()) {
+          TLOG() << "queen on square " << util::SquareString(attacker)
+                 << " absolutely pins " << util::SquareString(sq);
+          return true;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  return false;
+}
+
 void Position::MakeMove(Move mov) {
   // MakeMove operates by maintaining a stack of the data that is irreversibly
-  // lost whenever a move is made and maintaining a single copy of the data that
-  // is reversibly lost.
+  // lost whenever a move is made and maintaining a single copy of the data
+  // that is reversibly lost.
   //
   // Before making a move, we must first copy the current irreversible state
-  // onto the stack. Record the move that we're about to make, so we can replay
-  // it backwards later.
+  // onto the stack. Record the move that we're about to make, so we can
+  // replay it backwards later.
   current_state_.move = mov;
   irreversible_state_.push(current_state_);
 
   if (mov.IsNull()) {
     // Quick out for null moves:
     //  1. EP is not legal next turn.
-
     //  2. Halfmove clock always increases.
     //  3. Fullmove clock increases if Black makes the null move.
     current_state_.en_passant_square = {};
@@ -306,7 +362,6 @@ void Position::MakeMove(Move mov) {
 
   auto moving_piece = PieceAt(mov.Source());
   CHECK(moving_piece.has_value()) << "no piece at move source square";
-  CHECK(!mov.IsPromotion()) << "NYI: Promotion";
 
   if (mov.IsCapture()) {
     Square target_square = mov.Destination();
@@ -323,8 +378,8 @@ void Position::MakeMove(Move mov) {
     CHECK(captured_piece.has_value()) << "no piece at capture square";
 
     // Record the captured piece in the previous move's entry. When unwinding
-    // the move stack (unmaking a move), we'll look at the previous move's entry
-    // to determine what piece was captured.
+    // the move stack (unmaking a move), we'll look at the previous move's
+    // entry to determine what piece was captured.
     //
     // Note that this requires there to be at least one irreverisble state
     // already on the stack, but that's guaranteed because it's impossible for
@@ -363,8 +418,13 @@ void Position::MakeMove(Move mov) {
     AddPiece(new_rook_square, *rook);
   }
 
+  Piece piece_to_add = *moving_piece;
+  if (mov.IsPromotion()) {
+    piece_to_add = Piece(side_to_move_, mov.PromotionPiece());
+  }
+
   RemovePiece(mov.Source());
-  AddPiece(mov.Destination(), *moving_piece);
+  AddPiece(mov.Destination(), piece_to_add);
   if (mov.IsDoublePawnPush()) {
     // Double-pawn pushes set the en passant square.
     Direction ep_dir =
@@ -421,8 +481,8 @@ void Position::MakeMove(Move mov) {
 }
 
 void Position::UnmakeMove() {
-  // To unmake the move, we must first restore the previous move's irreversible
-  // state and then undo the reversible aspects of the move.
+  // To unmake the move, we must first restore the previous move's
+  // irreversible state and then undo the reversible aspects of the move.
   CHECK(!irreversible_state_.empty()) << "no moves to unmake";
   current_state_ = irreversible_state_.top();
   irreversible_state_.pop();
@@ -433,7 +493,6 @@ void Position::UnmakeMove() {
   CHECK(current_state_.move.has_value()) << "no move available to unmake";
   Move mov = *current_state_.move;
   TLOG() << "Unmaking move: " << mov;
-  CHECK(!mov.IsPromotion()) << "NYI: Promotion";
 
   // The rest of UnmakeMove proceeds in reverse of MakeMove; find the piece at
   // the destination square, remove it, replace it with the piece that was
@@ -454,8 +513,8 @@ void Position::UnmakeMove() {
 
     Square captured_piece_square = mov.Destination();
     if (mov.IsEnPassant()) {
-      // Like in MakeMove, en passant is the only move where we have to put the
-      // piece back somewhere other than the move destination.
+      // Like in MakeMove, en passant is the only move where we have to put
+      // the piece back somewhere other than the move destination.
       Direction ep_dir =
           side_to_move_ == kWhite ? kDirectionSouth : kDirectionNorth;
       captured_piece_square = util::Towards(mov.Destination(), ep_dir);
@@ -464,7 +523,14 @@ void Position::UnmakeMove() {
     AddPiece(captured_piece_square,
              Piece(!side_to_move_, *current_state_.last_capture_));
   }
-  AddPiece(mov.Source(), *moved_piece);
+
+  Piece piece_to_add = *moved_piece;
+  if (mov.IsPromotion()) {
+    // Only pawns can be promoted, therefore the piece that this used to be is
+    // a pawn.
+    piece_to_add = Piece(side_to_move_, kPawn);
+  }
+  AddPiece(mov.Source(), piece_to_add);
 
   if (mov.IsCastle()) {
     // If this move was a castle, we need to put the rook in the right spot.

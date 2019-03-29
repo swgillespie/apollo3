@@ -167,18 +167,43 @@ TEST(PositionTest, MovingInvalidatesCastle) {
   ASSERT_TRUE(p.CanCastleQueenside(apollo::kWhite));
 }
 
+TEST(PositionTest, BasicPromotion) {
+  Position p("8/4P3/8/8/8/8/8/8 w - - 0 1");
+  p.MakeMove(Move::Promotion(Square::E7, Square::E8, apollo::kQueen));
+  auto white_queen = p.PieceAt(Square::E8);
+  ASSERT_TRUE(white_queen.has_value());
+  ASSERT_EQ(apollo::kWhite, white_queen->color());
+  ASSERT_EQ(apollo::kQueen, white_queen->kind());
+  p.UnmakeMove();
+  auto white_pawn = p.PieceAt(Square::E7);
+  ASSERT_TRUE(white_pawn.has_value());
+  ASSERT_EQ(apollo::kWhite, white_pawn->color());
+  ASSERT_EQ(apollo::kPawn, white_pawn->kind());
+}
+
 TEST(PositionTest, FenParseHalfmove) {
   Position p("8/8/8/8/8/4P3/8/8 w - - 5 6");
   ASSERT_EQ(5, p.HalfmoveClock());
   ASSERT_EQ(6, p.FullmoveClock());
 }
 
-TEST(PositionCheckTests, CheckSmoke) {
+TEST(PositionCheckTest, CheckSmoke) {
   Position p("8/8/3r4/8/8/8/8/3K4 w - -");
   ASSERT_TRUE(p.IsCheck(apollo::kWhite));
 }
 
-TEST(PositionCheckTests, CheckSmokeNeg) {
+TEST(PositionCheckTest, CheckSmokeNeg) {
   Position p("8/8/4r3/8/8/8/8/3K4 w - -");
   ASSERT_FALSE(p.IsCheck(apollo::kWhite));
+}
+
+TEST(PositionPinTest, BasicPin) {
+  Position p("8/8/4q3/8/8/8/4BB2/4K3 w - - 0 1");
+  ASSERT_TRUE(p.IsAbsolutelyPinned(apollo::kBlack, Square::E2));
+  ASSERT_FALSE(p.IsAbsolutelyPinned(apollo::kBlack, Square::F2));
+}
+
+TEST(PositionPinTest, BasicPinNeg) {
+  Position p("8/8/4q3/8/4B3/8/4B3/4K3 w - - 0 1");
+  ASSERT_FALSE(p.IsAbsolutelyPinned(apollo::kBlack, Square::E2));
 }

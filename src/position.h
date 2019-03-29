@@ -106,6 +106,9 @@ class Position {
   Bitboard SquaresAttacking(Color to_move, Square sq) const;
   bool IsCheck(Color to_move) const;
 
+  // Pin detection
+  bool IsAbsolutelyPinned(Color to_move, Square sq) const;
+
   void AddPiece(Square sq, Piece piece);
   void RemovePiece(Square sq);
   std::optional<Piece> PieceAt(Square sq) const;

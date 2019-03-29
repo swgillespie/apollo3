@@ -84,3 +84,24 @@ TEST(PerftTest, Position3_4) {
   Position p("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1");
   ASSERT_PERFT(p, 4, 43238);
 }
+
+TEST(PerftTest, Position4_1) {
+  Position p(
+      "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+  ASSERT_PERFT(p, 1, 6);
+}
+TEST(PerftTest, Position4_2) {
+  Position p(
+      "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+  ASSERT_PERFT(p, 2, 264);
+}
+TEST(PerftTest, Position4_3) {
+  Position p(
+      "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+  ASSERT_PERFT(p, 3, 9467);
+}
+TEST(PerftTest, Position4_4) {
+  Position p(
+      "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+  ASSERT_PERFT(p, 4, 422333);
+}

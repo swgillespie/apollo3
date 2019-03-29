@@ -2,6 +2,7 @@ set(APOLLO_LIB_SOURCES
   movegen.cc
   attacks.cc
   position.cc
+  evaluators/shannon_evaluator.cc
 )
 
 set(APOLLO_SOURCES
