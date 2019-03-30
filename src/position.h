@@ -109,6 +109,9 @@ class Position {
   // Pin detection
   bool IsAbsolutelyPinned(Color to_move, Square sq) const;
 
+  // Move legality testing
+  bool IsLegal(Move mov) const;
+
   void AddPiece(Square sq, Piece piece);
   void RemovePiece(Square sq);
   std::optional<Piece> PieceAt(Square sq) const;

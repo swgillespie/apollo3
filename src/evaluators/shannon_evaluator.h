@@ -1,5 +1,5 @@
-#include "../board_evaluator.h"
-#include "../position.h"
+#include "board_evaluator.h"
+#include "position.h"
 
 namespace apollo {
 

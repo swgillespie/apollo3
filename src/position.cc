@@ -2,6 +2,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 #include "attacks.h"
 #include "movegen.h"
@@ -333,6 +334,106 @@ bool Position::IsAbsolutelyPinned(Color to_move, Square sq) const {
   }
 
   return false;
+}
+
+bool Position::IsLegal(Move mov) const {
+  // This is a very naive implementation of pseudo-legality, based on the fact
+  // that we know that the move generator generates pseudo legal moves.
+  std::vector<Move> pseudolegal_moves = PseudolegalMoves();
+  std::unordered_set<Move> move_set(pseudolegal_moves.begin(),
+                                    pseudolegal_moves.end());
+  if (move_set.find(mov) == move_set.end()) {
+    // Moves that are not pseudolegal are also not legal.
+    return false;
+  }
+
+  auto moving_piece = PieceAt(mov.Source());
+  if (!moving_piece) {
+    return false;
+  }
+
+  // mov is pseudolegal. It is legal if it doesn't put the king in check, either
+  // directly by moving the king into a attack square of another piece or
+  // indirectly by moving a piece that is absolutely pinned.
+
+  // Are we in check now?
+  if (IsCheck(SideToMove())) {
+    // If so, any move that keeps us in check is not legal.
+    Bitboard checking_pieces;
+    Kings(SideToMove()).ForEach([&](Square king) {
+      checking_pieces = checking_pieces | SquaresAttacking(!SideToMove(), king);
+    });
+
+    if (checking_pieces.Count() > 1) {
+      // Only kings may move in double check.
+      if (moving_piece->kind() != kKing) {
+        return false;
+      }
+
+      // This move is legal iff the king is safe at the end.
+      return SquaresAttacking(!SideToMove(), mov.Destination()).Empty();
+    } else {
+      // Single check - pieces may move to block or capture the singular
+      // checking piece.
+      //
+      // What piece is checking us?
+      auto checking_square = checking_pieces.Iterator().Next();
+      auto checking_piece = PieceAt(checking_square);
+      CHECK(checking_piece.has_value()) << "no checking piece?";
+      switch (checking_piece->kind()) {
+        case kPawn:
+        case kKnight:
+          // Can't be blocked. The checked player must capture the piece or
+          // move the king away.
+          if (moving_piece->kind() != kKing) {
+            return mov.IsCapture() && mov.Destination() == checking_square;
+          }
+          break;
+        case kKing:
+          // This is impossible, we could just take the king if so. But sure,
+          // it's a legal move.
+          return true;
+        case kBishop:
+        case kRook:
+        case kQueen:
+          // This is a sliding piece. We can capture it or block it.
+          Bitboard attack;
+          Bitboard pieces = Pieces(kWhite) | Pieces(kBlack);
+          switch (checking_piece->kind()) {
+            case kBishop:
+              attack = attacks::BishopAttacks(checking_square, pieces);
+              break;
+            case kRook:
+              attack = attacks::RookAttacks(checking_square, pieces);
+              break;
+            case kQueen:
+              attack = attacks::QueenAttacks(checking_square, pieces);
+              break;
+            default:
+              CHECK(false) << "impossible condition";
+              break;
+          }
+          break;
+      }
+    }
+  }
+
+  // If we're not in check, we're fine as long as we don't move into check.
+  // If this is a king move, does it move into check?
+  if (moving_piece->kind() == kKing &&
+      !SquaresAttacking(!SideToMove(), mov.Destination()).Empty()) {
+    return false;
+  }
+
+  // Is this piece absolutely pinned to the king?
+  if (IsAbsolutelyPinned(!SideToMove(), mov.Source())) {
+    return false;
+  }
+
+  // TODO(sean): For en-passant moves, we have to do a special check: an
+  // en-passant capture can take two pawns off a single rank, which can place
+  // the king in check if something is attacking that rank.
+  return true;
 }
 
 void Position::MakeMove(Move mov) {

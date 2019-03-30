@@ -59,5 +59,6 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_subdirectory(${googletest_SOURCE_DIR}/googletest ${googletest_BINARY_DIR})
 include_directories(SYSTEM ${googletest_SOURCE_DIR}/googletest/include ${googletest_SOURCE_DIR}/googletest)
 include_directories(SYSTEM third_party)
+include_directories(src)
 
 add_subdirectory(src)
