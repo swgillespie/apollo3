@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "attacks.h"
 #include "types.h"
 
 namespace apollo {
@@ -43,6 +44,26 @@ class Piece {
   Piece(Color color, PieceKind kind) {
     this->color_ = color == kWhite ? 1 : 0;
     this->piece_ = static_cast<int>(kind);
+  }
+
+  Bitboard Attacks(Square sq, Bitboard occupancy) const {
+    switch (kind()) {
+      case kPawn:
+        return attacks::PawnAttacks(sq, color());
+      case kBishop:
+        return attacks::BishopAttacks(sq, occupancy);
+      case kKnight:
+        return attacks::KnightAttacks(sq);
+      case kRook:
+        return attacks::RookAttacks(sq, occupancy);
+      case kQueen:
+        return attacks::QueenAttacks(sq, occupancy);
+      case kKing:
+        return attacks::KingAttacks(sq);
+      default:
+        CHECK(false) << "unknown piece kind";
+        return Bitboard();
+    }
   }
 
   Color color() const { return this->color_ == 1 ? kWhite : kBlack; }

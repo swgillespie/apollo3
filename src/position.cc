@@ -352,11 +352,63 @@ bool Position::IsLegal(Move mov) const {
     return false;
   }
 
+  // At this point we've confirmed that the move is pseudolegal. For a move to
+  // be legal, it must not leave the king in check after the move. This has two
+  // meanings, depending on the current state of the board:
+  //
+  //   1. If the player to move is in check, the given move must leave them out
+  //   of check
+  //   2. If the player to move is not in check, the given move must keep them
+  //   out of check
+  //
+  // Therefore this function proceeds differently depending on whether or not
+  // we're in check.
+  Color to_move = SideToMove();
+  if (IsCheck(to_move)) {
+    // We're in check.
+    CHECK(Kings(to_move).Count() == 1) << "expected exactly one king";
+    Square king = Kings(to_move).Iterator().Next();
+    Bitboard checking_pieces = SquaresAttacking(!to_move, king);
+    if (checking_pieces.Count() > 1) {
+      // Double or greater check. It is only legal to move a king.
+      if (moving_piece->kind() != kKing) {
+        return false;
+      }
+
+      // Fall-through to the remainder of this function. We're moving a king;
+      // the rest of the function will validate that the king's not moving to a
+      // checked square.
+    } else {
+      CHECK(checking_pieces.Count() == 1)
+          << "should be exactly one checking piece";
+      Square checking_piece = checking_pieces.Iterator().Next();
+
+      // We're being checked by exactly one piece. There are three options
+      // available to us:
+      //   1. Capture the checking piece.
+      //   2. Block the checking piece.
+      //   3. Move the king out of danger.
+      if (moving_piece->kind() != kKing) {
+      }
+    }
+  }
+
+  // At this point we have validated that the candidate move gets us out of
+  // check, if we are in check. Next we must validate that the candidate move
+  // doesn't put is back in check.
+  //
+  // This can happen in three ways:
+  //   1. The piece being moved is a king and the king moved into check
+  //   2. A piece that was absolutely pinned moved
+  //   3. An en-passant move captured a piece, removing two pieces from the same
+  //   rank and leaving an attack on the king.
+
   // mov is pseudolegal. It is legal if it doesn't put the king in check, either
   // directly by moving the king into a attack square of another piece or
   // indirectly by moving a piece that is absolutely pinned.
 
   // Are we in check now?
+  /*
   if (IsCheck(SideToMove())) {
     // If so, any move that keeps us in check is not legal.
     Bitboard checking_pieces;
@@ -417,6 +469,7 @@ bool Position::IsLegal(Move mov) const {
       }
     }
   }
+  */
 
   // If we're not in check, we're fine as long as we don't move into check.
   // If this is a king move, does it move into check?
@@ -433,6 +486,57 @@ bool Position::IsLegal(Move mov) const {
   // TODO(sean): For en-passant moves, we have to do a special check: an
   // en-passant capture can take two pawns off a single rank, which can place
   // the king in check if something is attacking that rank.
+  return true;
+}
+
+bool Position::IsLegalCheck(Move mov) const {
+  Color to_move = SideToMove();
+  auto moving_piece = PieceAt(mov.Source());
+
+  CHECK(IsCheck(to_move)) << "IsLegalCheck called when not in check";
+  CHECK(Kings(to_move).Count() == 1) << "expected exactly one king";
+  CHECK(moving_piece.has_value()) << "no moving piece";
+
+  Square king = Kings(to_move).Iterator().Next();
+  Bitboard checking_pieces = SquaresAttacking(!to_move, king);
+  if (checking_pieces.Count() > 1) {
+    // Double or greater check. It is only legal to move a king.
+    if (moving_piece->kind() != kKing) {
+      return false;
+    }
+
+    // Fall-through to the remainder of this function. We're moving a king;
+    // the rest of the function will validate that the king's not moving to a
+    // checked square.
+  } else {
+    CHECK(checking_pieces.Count() == 1)
+        << "should be exactly one checking piece";
+    Square checking_piece_square = checking_pieces.Iterator().Next();
+    Piece checking_piece = PieceAt(checking_piece_square).value();
+
+    // We're being checked by exactly one piece. There are three options
+    // available to us:
+    //   1. Capture the checking piece.
+    //   2. Block the checking piece.
+    //   3. Move the king out of danger.
+    if (moving_piece->kind() != kKing) {
+      // If we're moving to a piece other than where the checking piece resides,
+      // our intention is to block the checking piece.
+      if (mov.Destination() != checking_piece_square && !mov.IsEnPassant()) {
+        Bitboard all_pieces_with_block = Pieces(kWhite) | Pieces(kBlack);
+        all_pieces_with_block.Unset(mov.Source());
+        all_pieces_with_block.Set(mov.Destination());
+        if (checking_piece.Attacks(checking_piece_square, all_pieces_with_block)
+                .Test(king)) {
+          return false;
+        }
+      } else if (!mov.IsEnPassant()) {
+        CHECK(mov.IsCapture())
+            << "moving to checking piece square but not a capture";
+      }
+    }
+  }
+
   return true;
 }
 

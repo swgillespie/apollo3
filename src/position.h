@@ -126,6 +126,11 @@ class Position {
  private:
   friend class FenParser;
 
+  // Move legality
+  bool IsLegalCheck(Move mov) const;
+
+  Bitboard SquareAttacks(Square sq) const;
+
   struct IrreversibleInformation {
     std::optional<Move> move;
     std::optional<PieceKind> last_capture_;
