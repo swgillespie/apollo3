@@ -114,23 +114,22 @@ TEST(PerftTest, Position3_4) {
 }
 
 TEST(PerftTest, Position4_1) {
-  apollo::LogEnable(apollo::kLogInfo);
   Position p(
       "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
   ASSERT_PERFT(p, 1, 6);
-  // ASSERT_LEGAL_PERFT(p, 1, 6);
+  ASSERT_LEGAL_PERFT(p, 1, 6);
 }
 TEST(PerftTest, Position4_2) {
   Position p(
       "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
   ASSERT_PERFT(p, 2, 264);
-  // ASSERT_LEGAL_PERFT(p, 2, 264);
+  ASSERT_LEGAL_PERFT(p, 2, 264);
 }
 TEST(PerftTest, Position4_3) {
   Position p(
       "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
   ASSERT_PERFT(p, 3, 9467);
-  // ASSERT_LEGAL_PERFT(p, 3, 9467);
+  ASSERT_LEGAL_PERFT(p, 3, 9467);
 }
 TEST(PerftTest, Position4_4) {
   Position p(

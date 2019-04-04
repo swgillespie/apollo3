@@ -45,24 +45,52 @@ class Bitboard {
    */
   constexpr explicit Bitboard(uint64_t bits) : bits_(bits) {}
 
+  /**
+   * Tests whether or not the given square is set in this bitboard.
+   *
+   * @param square The square to test.
+   */
   constexpr bool Test(Square sq) const {
     return (this->bits_ & (1ULL << static_cast<int>(sq))) != 0;
   }
 
+  /**
+   * Sets a square in this bitboard, adding it to the square set.
+   *
+   * @param square The square to add to the set.
+   */
   constexpr void Set(Square sq) {
     this->bits_ |= (1ULL << static_cast<int>(sq));
   }
 
+  /**
+   * Unsets a square in this bitboard, removing it from the square set. Has no
+   * effect if the square isn't in the set.
+   *
+   * @param square The square to remove from the set.
+   */
   constexpr void Unset(Square sq) {
     this->bits_ &= ~(1ULL << static_cast<int>(sq));
   }
 
+  /**
+   * Returns true if this set is the empty set, otherwise return false.
+   */
   constexpr bool Empty() const { return this->bits_ == 0; }
 
+  /**
+   * Returns the bit pattern of this bitboard.
+   */
   constexpr uint64_t Bits() const { return this->bits_; }
 
+  /**
+   * Returns the number of squares present in this bitboard.
+   */
   constexpr int Count() const { return __builtin_popcountll(bits_); }
 
+  /**
+   * Returns an iterator yielding the squares contained in this bitset.
+   */
   BitboardIterator Iterator() const { return BitboardIterator(this->bits_); }
 
   template <typename Callback>

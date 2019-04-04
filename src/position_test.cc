@@ -207,3 +207,8 @@ TEST(PositionPinTest, BasicPinNeg) {
   Position p("8/8/4q3/8/4B3/8/4B3/4K3 w - - 0 1");
   ASSERT_FALSE(p.IsAbsolutelyPinned(apollo::kBlack, Square::E2));
 }
+
+TEST(PositionPinTest, KingPin) {
+  Position p("8/8/3r4/8/3K4/8/8/8 w - - 0 1");
+  ASSERT_FALSE(p.IsAbsolutelyPinned(apollo::kWhite, Square::D4));
+}

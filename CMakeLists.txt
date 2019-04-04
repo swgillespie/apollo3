@@ -15,6 +15,8 @@ message(STATUS "Current build type is ${CMAKE_BUILD_TYPE}")
 
 set(APOLLO_MAJOR_VERSION 0)
 set(APOLLO_MINOR_VERSION 1)
+set(APOLLO_PATCH_VERSION 0)
+
 set(CMAKE_CXX_STANDARD 17)
 set(GTEST_VERSION release-1.8.0)
 
@@ -28,6 +30,20 @@ FetchContent_GetProperties(googletest)
 if(NOT googletest_POPULATED)
   FetchContent_Populate(googletest)
 endif(NOT googletest_POPULATED)
+
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  message(STATUS "Doxygen found, building documentation")
+
+  set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+  set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+  configure_file(${DOXYFILE_IN} ${DOXYFILE} @ONLY)
+  add_custom_target(doc
+    ${DOXYGEN_EXECUTABLE} ${DOXYFILE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen")
+endif(DOXYGEN_FOUND)
+
 
 if(APOLLO_CLANG_UBSAN)
   message(STATUS "Building with undefined behavior sanitizers")
