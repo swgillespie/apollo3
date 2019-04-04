@@ -85,6 +85,10 @@ enum Rank {
   kRankLast,
 };
 
+constexpr std::array<Rank, kRankLast> kRanks = {
+    kRank1, kRank2, kRank3, kRank4, kRank5, kRank6, kRank7, kRank8,
+};
+
 enum File {
   kFileA,
   kFileB,
@@ -95,6 +99,10 @@ enum File {
   kFileG,
   kFileH,
   kFileLast
+};
+
+constexpr std::array<File, kFileLast> kFiles = {
+    kFileA, kFileB, kFileC, kFileD, kFileE, kFileF, kFileG, kFileH,
 };
 
 enum Color { kWhite, kBlack, kColorLast };

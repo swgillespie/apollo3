@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <iostream>
 
@@ -162,5 +163,15 @@ constexpr Bitboard kBBFileGH = kBBFileG | kBBFileH;
 
 constexpr Bitboard kBBRank12 = kBBRank1 | kBBRank2;
 constexpr Bitboard kBBRank78 = kBBRank7 | kBBRank8;
+
+constexpr std::array<Bitboard, kFileLast> kBBFiles = {
+    kBBFileA, kBBFileB, kBBFileC, kBBFileD,
+    kBBFileE, kBBFileF, kBBFileG, kBBFileH,
+};
+
+constexpr std::array<Bitboard, kRankLast> kBBRanks = {
+    kBBRank1, kBBRank2, kBBRank3, kBBRank4,
+    kBBRank5, kBBRank6, kBBRank7, kBBRank8,
+};
 
 }  // namespace apollo

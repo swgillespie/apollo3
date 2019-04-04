@@ -16,6 +16,7 @@ namespace apollo {
  * See https://www.pi.infn.it/~carosi/chess/shannon.txt for the full text.
  */
 class ShannonEvaluator : public BoardEvaluator {
+ public:
   ShannonEvaluator();
 
   virtual BoardScore Evaluate(const Position& pos) override;
