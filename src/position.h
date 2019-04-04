@@ -39,6 +39,14 @@ class InvalidFenException : std::exception {
  * A Position represents a singular chess position. It contains all of the state
  * necessary to represent a instant in a game of chess, as well as enough state
  * to recreate all positions of the game up until this point.
+ *
+ * In practice, a Position contains:
+ *   1. A number of bitboards that, when taken together, represent the location
+ * of all pieces on the board.
+ *   2. A stack of "irreversible state", or state that can't be inferred based
+ * on the current state. This include things like the halfmove clock, which
+ * resets to zero and it's impossible to know what its value was before a move.
+ *   3. The player whose turn it is to move.
  */
 class Position {
  public:
@@ -63,33 +71,69 @@ class Position {
    */
   Position& operator=(const Position&) = delete;
 
+  /**
+   * Returns the player to move.
+   */
   Color SideToMove() const { return this->side_to_move_; }
 
+  /**
+   * Returns the current value of the fullmove clock.
+   */
   int FullmoveClock() const { return this->current_state_.fullmove_clock; }
 
+  /**
+   * Returns the current value of the halfmove clock.
+   */
   int HalfmoveClock() const { return this->current_state_.halfmove_clock; }
 
+  /**
+   * Returns the current en passant square, if an en passant move is legal from
+   * the current board position.
+   */
   std::optional<Square> EnPassantSquare() const {
     return this->current_state_.en_passant_square;
   }
 
+  /**
+   * Returns whether or not the given color is allowed to castle kingside.
+   *
+   * @param color The side to query castle status for.
+   */
   bool CanCastleKingside(Color color) const {
     CastleStatus mask =
         color == kWhite ? kCastleWhiteKingside : kCastleBlackKingside;
     return (this->current_state_.castle_status & mask) == mask;
   }
 
+  /**
+   * Returns whether or not the given color is allowed to castle queenside.
+   *
+   * @param color The side to query castle status for.
+   */
   bool CanCastleQueenside(Color color) const {
     CastleStatus mask =
         color == kWhite ? kCastleWhiteQueenside : kCastleBlackQueenside;
     return (this->current_state_.castle_status & mask) == mask;
   }
 
+  /**
+   * Returns a bitboard of squares containing pieces of the given kind belonging
+   * to the given color.
+   *
+   * @param color The color to query pieces for.
+   * @param kind The requested piece kind.
+   */
   Bitboard Pieces(Color color, PieceKind kind) const {
     int offset = color == kWhite ? 0 : 6;
     return boards_by_piece_[offset + static_cast<int>(kind)];
   }
 
+  /**
+   * Returns a bitboard of squares containing all pieces belonging to the given
+   * color.
+   *
+   * @param color The color to query pieces for.
+   */
   Bitboard Pieces(Color color) const {
     return boards_by_color_[color == kWhite ? 0 : 1];
   }
