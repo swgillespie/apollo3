@@ -20,6 +20,7 @@ Usage:
 )USG";
 
 [[noreturn]] void PerftCommand(int argc, const char* argv[]);
+[[noreturn]] void EvaluateCommand(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]) {
   apollo::LogEnable(apollo::kLogInfo);
@@ -32,6 +33,9 @@ int main(int argc, const char* argv[]) {
   */
   if (argc >= 2 && strcmp(argv[1], "perft") == 0) {
     PerftCommand(argc, argv);
+  }
+  if (argc >= 2 && strcmp(argv[1], "evaluate") == 0) {
+    EvaluateCommand(argc, argv);
   }
   std::cout << kUsage << std::endl;
 }

@@ -5,11 +5,11 @@ set(APOLLO_LIB_SOURCES
   position.cc
   evaluators/shannon_evaluator.cc
   search/searcher.cc
-  search/transposition_table.cc
   zobrist.cc
 )
 
 set(APOLLO_SOURCES
+  main_evaluate.cc
   main_perft.cc
   main.cc
 )

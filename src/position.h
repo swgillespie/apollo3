@@ -198,4 +198,10 @@ class Position {
   Color side_to_move_;
 };
 
+inline std::ostream& operator<<(std::ostream& os, const Position& pos) {
+  os << std::endl;
+  pos.Dump(os);
+  return os;
+}
+
 }  // namespace apollo

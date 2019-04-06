@@ -1,7 +1,7 @@
 #include "board_evaluator.h"
 #include "position.h"
 
-namespace apollo {
+namespace apollo::evaluators {
 
 /**
  * The ShannonEvaluator is a simple board evaluator based on the 1949 paper
@@ -22,4 +22,4 @@ class ShannonEvaluator : public BoardEvaluator {
   virtual double Evaluate(const Position& pos) const override;
 };
 
-}  // namespace apollo
+}  // namespace apollo::evaluators

@@ -14,6 +14,8 @@ using nlohmann::json;
 
 const char* const kIntermediateFilename = "intermediates.json";
 
+namespace {
+
 bool save_intermediates = false;
 const char* position_fen = nullptr;
 int depth = 4;
@@ -47,6 +49,8 @@ void ParseOptions(int argc, const char* argv[]) {
     }
   }
 }
+
+}  // anonymous namespace
 
 int Perft(Position& pos, int depth, json& document) {
   if (depth == 0) {

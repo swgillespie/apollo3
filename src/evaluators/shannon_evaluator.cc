@@ -1,7 +1,7 @@
 #include "shannon_evaluator.h"
 #include "analysis.h"
 
-namespace apollo {
+namespace apollo::evaluators {
 
 const double kKingWeight = 200;
 const double kQueenWeight = 9;
@@ -46,4 +46,4 @@ double ShannonEvaluator::Evaluate(const Position& pos) const {
          mobilityScore;
 }
 
-}  // namespace apollo
+}  // namespace apollo::evaluators
