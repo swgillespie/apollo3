@@ -19,7 +19,7 @@ class ShannonEvaluator : public BoardEvaluator {
  public:
   ShannonEvaluator();
 
-  virtual BoardScore Evaluate(const Position& pos) const override;
+  virtual double Evaluate(const Position& pos) const override;
 };
 
 }  // namespace apollo

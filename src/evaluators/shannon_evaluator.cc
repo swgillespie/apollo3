@@ -14,7 +14,7 @@ const double kMobilityWeight = 0.1;
 
 ShannonEvaluator::ShannonEvaluator() {}
 
-BoardScore ShannonEvaluator::Evaluate(const Position& pos) const {
+double ShannonEvaluator::Evaluate(const Position& pos) const {
   Analysis boardAnalysis(pos);
 
   double kingScore =
@@ -41,11 +41,9 @@ BoardScore ShannonEvaluator::Evaluate(const Position& pos) const {
       kPawnFormationWeight * (boardAnalysis.DoubledPawns(kWhite).Count() -
                               boardAnalysis.DoubledPawns(kBlack).Count());
 
-  double score = kingScore + queenScore + rookScore + bishopScore +
-                 knightScore + pawnScore + isolatedPawnScore +
-                 backwardPawnScore + doubledPawnScore + mobilityScore;
-
-  return {BoardScore::kScore, {score}};
+  return kingScore + queenScore + rookScore + bishopScore + knightScore +
+         pawnScore + isolatedPawnScore + backwardPawnScore + doubledPawnScore +
+         mobilityScore;
 }
 
 }  // namespace apollo
