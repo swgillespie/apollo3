@@ -23,7 +23,7 @@ Usage:
 [[noreturn]] void EvaluateCommand(int argc, const char* argv[]);
 
 int main(int argc, const char* argv[]) {
-  apollo::LogEnable(apollo::kLogInfo);
+  apollo::LogEnable(apollo::kLogTrace);
   TLOG() << "logging enabled";
   /*
   Position p("rnbqkbnr/pp2pppp/2p5/3P4/3P4/8/PPP2PPP/RNBQKBNR w KQkq -");

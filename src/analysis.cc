@@ -78,7 +78,7 @@ int Analysis::Mobility(Color color) {
   std::vector<Move> pseudolegal_moves = pos_.PseudolegalMoves();
   int move_count = 0;
   for (Move mov : pseudolegal_moves) {
-    if (pos_.IsLegal(mov)) {
+    if (pos_.IsLegalGivenPseudolegal(mov)) {
       move_count++;
     }
   }

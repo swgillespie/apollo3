@@ -58,6 +58,7 @@ void ParseOptions(int argc, const char* argv[]) {
   SearchResult result = search.Search(p, depth);
   std::cout << "  best move: " << result.best_move << std::endl;
   std::cout << "      score: " << result.score << std::endl;
+  std::cout << "      nodes: " << result.nodes_searched << std::endl;
 
   std::exit(EXIT_SUCCESS);
 }

@@ -129,30 +129,40 @@ void GenerateKingMoves(const Position& pos, std::vector<Move>& moves) {
 
     Bitboard all_pieces = allied_pieces | enemy_pieces;
     if (pos.CanCastleKingside(color)) {
-      Square one = util::Towards(king, kDirectionEast);
-      Square two = util::Towards(one, kDirectionEast);
-      if (!all_pieces.Test(one) && !all_pieces.Test(two)) {
-        // The king moves across both squares one and two and it is illegal to
-        // castle through check. We can only proceed if no enemy piece is
-        // attacking the squares the king travels upon.
-        if (pos.SquaresAttacking(!color, one).Empty() &&
-            pos.SquaresAttacking(!color, two).Empty()) {
-          moves.push_back(Move::KingsideCastle(king, two));
+      Square starting_rook = color == kWhite ? Square::H1 : Square::H8;
+      auto maybe_rook = pos.PieceAt(starting_rook);
+      if (maybe_rook && maybe_rook->kind() == kRook &&
+          maybe_rook->color() == color) {
+        Square one = util::Towards(king, kDirectionEast);
+        Square two = util::Towards(one, kDirectionEast);
+        if (!all_pieces.Test(one) && !all_pieces.Test(two)) {
+          // The king moves across both squares one and two and it is illegal to
+          // castle through check. We can only proceed if no enemy piece is
+          // attacking the squares the king travels upon.
+          if (pos.SquaresAttacking(!color, one).Empty() &&
+              pos.SquaresAttacking(!color, two).Empty()) {
+            moves.push_back(Move::KingsideCastle(king, two));
+          }
         }
       }
     }
 
     if (pos.CanCastleQueenside(color)) {
-      Square one = util::Towards(king, kDirectionWest);
-      Square two = util::Towards(one, kDirectionWest);
-      Square three = util::Towards(two, kDirectionWest);
-      if (!all_pieces.Test(one) && !all_pieces.Test(two) &&
-          !all_pieces.Test(three)) {
-        // Square three can be checked, but it can't be occupied. The rook
-        // travels across square three, but the king does not.
-        if (pos.SquaresAttacking(!color, one).Empty() &&
-            pos.SquaresAttacking(!color, two).Empty()) {
-          moves.push_back(Move::QueensideCastle(king, two));
+      Square starting_rook = color == kWhite ? Square::A1 : Square::A8;
+      auto maybe_rook = pos.PieceAt(starting_rook);
+      if (maybe_rook && maybe_rook->kind() == kRook &&
+          maybe_rook->color() == color) {
+        Square one = util::Towards(king, kDirectionWest);
+        Square two = util::Towards(one, kDirectionWest);
+        Square three = util::Towards(two, kDirectionWest);
+        if (!all_pieces.Test(one) && !all_pieces.Test(two) &&
+            !all_pieces.Test(three)) {
+          // Square three can be checked, but it can't be occupied. The rook
+          // travels across square three, but the king does not.
+          if (pos.SquaresAttacking(!color, one).Empty() &&
+              pos.SquaresAttacking(!color, two).Empty()) {
+            moves.push_back(Move::QueensideCastle(king, two));
+          }
         }
       }
     }
@@ -164,7 +174,6 @@ void GenerateKingMoves(const Position& pos, std::vector<Move>& moves) {
 namespace movegen {
 
 void GeneratePseudolegalMoves(const Position& pos, std::vector<Move>& moves) {
-  GeneratePawnMoves(pos, moves);
   GenerateKnightMoves(pos, moves);
   GenerateSlidingMoves(pos, moves, [&](Color c) { return pos.Bishops(c); },
                        attacks::BishopAttacks);
@@ -173,6 +182,7 @@ void GeneratePseudolegalMoves(const Position& pos, std::vector<Move>& moves) {
   GenerateSlidingMoves(pos, moves, [&](Color c) { return pos.Queens(c); },
                        attacks::QueenAttacks);
   GenerateKingMoves(pos, moves);
+  GeneratePawnMoves(pos, moves);
 }
 
 }  // namespace movegen

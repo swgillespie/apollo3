@@ -356,6 +356,10 @@ bool Position::IsLegal(Move mov) const {
     return false;
   }
 
+  return IsLegalGivenPseudolegal(mov);
+}
+
+bool Position::IsLegalGivenPseudolegal(Move mov) const {
   auto moving_piece = PieceAt(mov.Source());
   if (!moving_piece) {
     return false;
@@ -523,7 +527,7 @@ void Position::MakeMove(Move mov) {
 
     auto rook = PieceAt(rook_square);
     CHECK(rook.has_value() && rook->kind() == kRook)
-        << "rook not at destination";
+        << "rook not at destination: " << AsFen() << " " << mov;
     RemovePiece(rook_square);
     AddPiece(new_rook_square, *rook);
   }
@@ -581,7 +585,6 @@ void Position::MakeMove(Move mov) {
     }
   } else if (moving_piece->kind() == kKing) {
     // Moving a king invalidates the castle on both sides.
-    TLOG() << "white can no longer castle (king move)";
     CastleStatus mask = side_to_move_ == kWhite ? kCastleWhite : kCastleBlack;
     current_state_.castle_status &= ~mask;
     zobrist::ModifyKingsideCastle(current_state_.zobrist_hash_, side_to_move_);
@@ -616,7 +619,6 @@ void Position::UnmakeMove() {
 
   CHECK(current_state_.move.has_value()) << "no move available to unmake";
   Move mov = *current_state_.move;
-  TLOG() << "Unmaking move: " << mov;
 
   // The rest of UnmakeMove proceeds in reverse of MakeMove; find the piece at
   // the destination square, remove it, replace it with the piece that was
@@ -626,14 +628,11 @@ void Position::UnmakeMove() {
   // from current state (which we just restored).
   auto moved_piece = PieceAt(mov.Destination());
   CHECK(moved_piece.has_value()) << "no piece at move destination square";
-  TLOG() << "piece that moved: " << moved_piece->kind();
 
   RemovePiece(mov.Destination());
   if (mov.IsCapture()) {
     CHECK(current_state_.last_capture_.has_value())
         << "unmaking capture with no last capture piece";
-    TLOG() << "last captured piece was " << *current_state_.last_capture_;
-    TLOG() << "side to move: " << side_to_move_;
 
     Square captured_piece_square = mov.Destination();
     if (mov.IsEnPassant()) {

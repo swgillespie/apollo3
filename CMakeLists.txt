@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
 project(apollo CXX)
 include(FetchContent)
 include(GoogleTest)
@@ -7,6 +7,7 @@ enable_testing()
 option(APOLLO_USE_WERROR "Build with -Werror, which can cause build breaks" OFF)
 option(APOLLO_CLANG_UBSAN "Build with undefined behavior sanitizers" OFF)
 option(APOLLO_CLANG_ASAN "Build with address sanitizers" OFF)
+option(APOLLO_USE_LTO "Build with Link-Time Optimiation")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -78,3 +79,7 @@ include_directories(SYSTEM third_party)
 include_directories(src)
 
 add_subdirectory(src)
+
+if (APOLLO_USE_LTO)
+  set_property(TARGET apollo3 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif(APOLLO_USE_LTO)

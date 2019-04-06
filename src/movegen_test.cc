@@ -103,3 +103,11 @@ TEST(MoveGenTest, KnightSmoke) {
       Move::Quiet(Square::D4, Square::B5), Move::Quiet(Square::D4, Square::C6),
       Move::Capture(Square::D4, Square::E6)));
 }
+
+TEST(MoveGenTest, CastleWithNoRook) {
+  // Bug fix - even if allowed to castle, White can't castle unless there's
+  // actually a rook in its starting position.
+  Position p("r3k2r/ppp2pp1/2n4p/3P4/8/bP4P1/P1PBBP1P/R3K2b w KQkq - 0 4");
+  ASSERT_NO_FATAL_FAILURE(
+      AssertDoesNotHaveMove(p, Move::KingsideCastle(Square::E1, Square::G1)));
+}

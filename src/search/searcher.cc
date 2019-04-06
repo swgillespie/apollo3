@@ -6,6 +6,7 @@
 namespace apollo::search {
 
 SearchResult Searcher::Search(Position& pos, int depth) {
+  nodes_ = 0;
   Move best_move = Move::Null();
   double best_score = -std::numeric_limits<double>::infinity();
   double alpha = best_score;
@@ -23,7 +24,7 @@ SearchResult Searcher::Search(Position& pos, int depth) {
     }
   }
 
-  return {best_move, best_score};
+  return {best_move, best_score, nodes_};
 }
 
 double Searcher::AlphaBeta(Position& pos, double alpha, double beta,
@@ -48,6 +49,7 @@ double Searcher::AlphaBeta(Position& pos, double alpha, double beta,
 }
 
 double Searcher::Quiesce(Position& pos, double alpha, double beta) {
+  nodes_++;
   double value = evaluator_->Evaluate(pos);
   return pos.SideToMove() == kBlack ? -value : value;
 }

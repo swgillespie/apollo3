@@ -161,6 +161,7 @@ class Position {
 
   // Move legality testing
   bool IsLegal(Move mov) const;
+  bool IsLegalGivenPseudolegal(Move mov) const;
 
   void AddPiece(Square sq, Piece piece);
   void RemovePiece(Square sq);
