@@ -9,6 +9,7 @@
 #include "piece.h"
 #include "position.h"
 #include "util.h"
+#include "zobrist.h"
 
 namespace apollo {
 
@@ -147,6 +148,7 @@ class FenParser {
       Advance();
     }
     pos.current_state_.fullmove_clock = std::stoi(fullmove_stream.str());
+    pos.current_state_.zobrist_hash_ = zobrist::Hash(pos);
   }
 
  private:
@@ -195,6 +197,7 @@ void Position::AddPiece(Square sq, Piece piece) {
   size_t offset = piece.color() == kWhite ? 0 : 6;
   size_t kind = static_cast<size_t>(piece.kind());
   this->boards_by_piece_[kind + offset].Set(sq);
+  zobrist::ModifyPiece(current_state_.zobrist_hash_, sq, piece);
 }
 
 void Position::RemovePiece(Square sq) {
@@ -204,6 +207,7 @@ void Position::RemovePiece(Square sq) {
   size_t offset = existing_piece->color() == kWhite ? 0 : 6;
   size_t kind = static_cast<size_t>(existing_piece->kind());
   this->boards_by_piece_[kind + offset].Unset(sq);
+  zobrist::ModifyPiece(current_state_.zobrist_hash_, sq, *existing_piece);
 }
 
 std::optional<Piece> Position::PieceAt(Square sq) const {
@@ -462,6 +466,7 @@ void Position::MakeMove(Move mov) {
     current_state_.en_passant_square = {};
     current_state_.halfmove_clock++;
     side_to_move_ = !side_to_move_;
+    zobrist::ModifySideToMove(current_state_.zobrist_hash_);
     if (side_to_move_ == kWhite) {
       current_state_.fullmove_clock++;
     }
@@ -496,9 +501,6 @@ void Position::MakeMove(Move mov) {
     RemovePiece(target_square);
   }
 
-  // Reset the EP-square. Either we took the EP-move and have already handled
-  // it, or we didn't and it's no longer valid.
-  current_state_.en_passant_square = {};
   if (mov.IsCastle()) {
     // Castles are encoded based on the king's start and stop position.
     // Notably, the rook is not at the move's destination square.
@@ -538,7 +540,13 @@ void Position::MakeMove(Move mov) {
     Direction ep_dir =
         SideToMove() == kWhite ? kDirectionSouth : kDirectionNorth;
     Square ep_sq = util::Towards(mov.Destination(), ep_dir);
+    zobrist::ModifyEnPassant(current_state_.zobrist_hash_,
+                             current_state_.en_passant_square, ep_sq);
     current_state_.en_passant_square = ep_sq;
+  } else {
+    zobrist::ModifyEnPassant(current_state_.zobrist_hash_,
+                             current_state_.en_passant_square, {});
+    current_state_.en_passant_square = {};
   }
 
   // Re-calculate our castling status. Side to move may have invalidated their
@@ -556,27 +564,32 @@ void Position::MakeMove(Move mov) {
 
     if (CanCastleQueenside(side_to_move_) && mov.Source() == queenside_rook) {
       // Move of the queenside rook. Can't castle queenside anymore.
-      TLOG() << "white can no longer castle queenside (rook move)";
       CastleStatus mask = side_to_move_ == kWhite ? kCastleWhiteQueenside
                                                   : kCastleBlackQueenside;
       current_state_.castle_status &= ~mask;
+      zobrist::ModifyQueensideCastle(current_state_.zobrist_hash_,
+                                     side_to_move_);
     }
 
     if (CanCastleKingside(side_to_move_) && mov.Source() == kingside_rook) {
       // Move of the kingside rook. Can't castle kingside anymore.
-      TLOG() << "white can no longer castle kingside (rook move)";
       CastleStatus mask =
           side_to_move_ == kWhite ? kCastleWhiteKingside : kCastleBlackKingside;
       current_state_.castle_status &= ~mask;
+      zobrist::ModifyKingsideCastle(current_state_.zobrist_hash_,
+                                    side_to_move_);
     }
   } else if (moving_piece->kind() == kKing) {
     // Moving a king invalidates the castle on both sides.
     TLOG() << "white can no longer castle (king move)";
     CastleStatus mask = side_to_move_ == kWhite ? kCastleWhite : kCastleBlack;
     current_state_.castle_status &= ~mask;
+    zobrist::ModifyKingsideCastle(current_state_.zobrist_hash_, side_to_move_);
+    zobrist::ModifyQueensideCastle(current_state_.zobrist_hash_, side_to_move_);
   }
 
   side_to_move_ = !side_to_move_;
+  zobrist::ModifySideToMove(current_state_.zobrist_hash_);
   if (mov.IsCapture() || moving_piece->kind() == kPawn) {
     current_state_.halfmove_clock = 0;
   } else {
@@ -594,6 +607,9 @@ void Position::UnmakeMove() {
   CHECK(!irreversible_state_.empty()) << "no moves to unmake";
   current_state_ = irreversible_state_.top();
   irreversible_state_.pop();
+
+  // See comment at the bottom of this function.
+  uint64_t hack_hash = current_state_.zobrist_hash_;
 
   // Reverse the side to move.
   side_to_move_ = !side_to_move_;
@@ -664,6 +680,14 @@ void Position::UnmakeMove() {
     RemovePiece(rook_square);
     AddPiece(target_rook_square, *rook);
   }
+
+  // HACK HACK HACK: the zobrist hash is saved in the irreversible state buffer
+  // because it's hard to reverse it in UnmakeMove. We just called a bunch of
+  // functions that messed with the hash, so just restore the hash from the
+  // irreversible state buffer now.
+  //
+  // This sucks, but it works.
+  current_state_.zobrist_hash_ = hack_hash;
 }
 
 std::vector<Move> Position::PseudolegalMoves() const {

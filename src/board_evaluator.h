@@ -34,7 +34,7 @@ class BoardEvaluator {
 
   virtual ~BoardEvaluator() {}
 
-  virtual BoardScore Evaluate(const Position& pos) = 0;
+  virtual BoardScore Evaluate(const Position& pos) const = 0;
 };
 
 }  // namespace apollo

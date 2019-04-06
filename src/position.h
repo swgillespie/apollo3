@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <optional>
@@ -85,6 +86,11 @@ class Position {
    * Returns the current value of the halfmove clock.
    */
   int HalfmoveClock() const { return this->current_state_.halfmove_clock; }
+
+  /**
+   * Returns the Zobrist hash of this position.
+   */
+  uint64_t ZobristHash() const { return current_state_.zobrist_hash_; }
 
   /**
    * Returns the current en passant square, if an en passant move is legal from
@@ -182,6 +188,7 @@ class Position {
     int halfmove_clock;
     int fullmove_clock;
     CastleStatus castle_status;
+    uint64_t zobrist_hash_;
   };
 
   IrreversibleInformation current_state_;

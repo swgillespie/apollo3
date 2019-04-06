@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "analysis.h"
 #include "log.h"
 
@@ -27,24 +29,50 @@ Bitboard Analysis::BackwardPawns(Color color) {
       continue;
     }
 
-    for (Bitboard rank : kBBRanks) {
-      Bitboard current_file_rank = rank & pawns_on_current_file;
-      Bitboard adjacent_file_rank = rank & pawns_on_adjacent_files;
-      if (!current_file_rank.Empty() && !adjacent_file_rank.Empty()) {
-        answer = answer | current_file_rank;
-        break;
-      }
+    auto walk_rank = [&](auto begin, auto end) {
+      for (auto it = begin; it != end; it++) {
+        Bitboard current_file_rank = *it & pawns_on_current_file;
+        Bitboard adjacent_file_rank = *it & pawns_on_adjacent_files;
+        if (!current_file_rank.Empty() && adjacent_file_rank.Empty()) {
+          answer = answer | current_file_rank;
+          break;
+        }
 
-      if (!adjacent_file_rank.Empty() && current_file_rank.Empty()) {
-        break;
+        if (!adjacent_file_rank.Empty() && current_file_rank.Empty()) {
+          break;
+        }
       }
+    };
+
+    if (color == kWhite) {
+      walk_rank(std::begin(kBBRanks), std::end(kBBRanks));
+    } else {
+      walk_rank(std::rbegin(kBBRanks), std::rend(kBBRanks));
     }
   }
 
   return answer;
 }
 
-Bitboard Analysis::IsolatedPawns(Color color) { return Bitboard(); }
+Bitboard Analysis::IsolatedPawns(Color color) {
+  Bitboard pawns = pos_.Pawns(color);
+  Bitboard answer;
+  for (File file : kFiles) {
+    Bitboard adjacent_files = AdjacentFiles(file);
+    Bitboard current_file = kBBFiles[file];
+    Bitboard pawns_on_current_file = pawns & current_file;
+    Bitboard pawns_on_adjacent_files = pawns & adjacent_files;
+    if (pawns_on_current_file.Empty()) {
+      continue;
+    }
+
+    if (pawns_on_adjacent_files.Empty()) {
+      answer = answer | pawns_on_current_file;
+    }
+  }
+
+  return answer;
+}
 
 int Analysis::Mobility(Color color) {
   std::vector<Move> pseudolegal_moves = pos_.PseudolegalMoves();

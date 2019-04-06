@@ -140,6 +140,12 @@ class Bitboard {
   uint64_t bits_;
 };
 
+inline std::ostream& operator<<(std::ostream& os, const Bitboard& bb) {
+  os << std::endl;
+  bb.Dump(os);
+  return os;
+}
+
 constexpr Bitboard kBBRank1 = Bitboard(0x00000000000000FFULL);
 constexpr Bitboard kBBRank2 = Bitboard(0x000000000000FF00ULL);
 constexpr Bitboard kBBRank3 = Bitboard(0x0000000000FF0000ULL);

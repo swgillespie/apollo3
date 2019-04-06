@@ -14,7 +14,7 @@ const double kMobilityWeight = 0.1;
 
 ShannonEvaluator::ShannonEvaluator() {}
 
-BoardScore ShannonEvaluator::Evaluate(const Position& pos) {
+BoardScore ShannonEvaluator::Evaluate(const Position& pos) const {
   Analysis boardAnalysis(pos);
 
   double kingScore =

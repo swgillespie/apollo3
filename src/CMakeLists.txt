@@ -4,6 +4,9 @@ set(APOLLO_LIB_SOURCES
   attacks.cc
   position.cc
   evaluators/shannon_evaluator.cc
+  search/searcher.cc
+  search/transposition_table.cc
+  zobrist.cc
 )
 
 set(APOLLO_SOURCES

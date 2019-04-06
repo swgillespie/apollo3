@@ -31,6 +31,7 @@ TEST(PositionTest, PawnHalfmoveClock) {
 
 TEST(PositionTest, BasicUnmake) {
   Position p("8/8/8/8/8/4P3/8/8 w - - 5 6");
+  uint64_t hash = p.ZobristHash();
   p.MakeMove(Move::Quiet(Square::E3, Square::E4));
   ASSERT_FALSE(p.PieceAt(Square::E3).has_value());
   ASSERT_TRUE(p.PieceAt(Square::E4).has_value());
@@ -40,6 +41,7 @@ TEST(PositionTest, BasicUnmake) {
   p.UnmakeMove();
   ASSERT_TRUE(p.PieceAt(Square::E3).has_value());
   ASSERT_FALSE(p.PieceAt(Square::E4).has_value());
+  ASSERT_EQ(hash, p.ZobristHash());
 
   // Unmake resets the halfmove and fullmove clocks to their
   // value before the move.
