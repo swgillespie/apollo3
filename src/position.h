@@ -63,16 +63,6 @@ class Position {
   explicit Position(std::string_view fen);
 
   /**
-   * Disallow copying of Positions.
-   */
-  Position(const Position&) = delete;
-
-  /**
-   * Disallow copying of Positions.
-   */
-  Position& operator=(const Position&) = delete;
-
-  /**
    * Returns the player to move.
    */
   Color SideToMove() const { return this->side_to_move_; }
@@ -173,6 +163,8 @@ class Position {
   std::vector<Move> PseudolegalMoves() const;
 
   void Dump(std::ostream& out) const;
+
+  std::optional<Move> MoveFromUci(std::string_view) const;
 
  private:
   friend class FenParser;

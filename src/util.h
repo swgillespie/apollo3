@@ -78,4 +78,23 @@ inline std::optional<File> CharToFile(char c) {
   }
 }
 
+inline std::optional<PieceKind> CharToPiece(char c) {
+  switch (c) {
+    case 'p':
+      return kPawn;
+    case 'n':
+      return kKnight;
+    case 'b':
+      return kBishop;
+    case 'r':
+      return kRook;
+    case 'q':
+      return kQueen;
+    case 'k':
+      return kKing;
+    default:
+      return {};
+  }
+}
+
 }  // namespace apollo::util

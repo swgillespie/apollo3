@@ -777,4 +777,157 @@ std::string Position::AsFen() const {
   return ss.str();
 }
 
+std::optional<Move> Position::MoveFromUci(std::string_view uci) const {
+  // UCI encodes a move as the source square, followed by the destination
+  // square, and optionally followed by the promotion piece if necessary.
+  if (uci.size() < 4) {
+    // It's not a valid move encoding at all if it's this short.
+    return {};
+  }
+
+  // A particular quirk of UCI, null moves are encoded as 0000.
+  if (uci == "0000") {
+    return Move::Null();
+  }
+
+  auto maybe_source_file = util::CharToFile(uci[0]);
+  auto maybe_source_rank = util::CharToRank(uci[1]);
+  auto maybe_dest_file = util::CharToFile(uci[2]);
+  auto maybe_dest_rank = util::CharToRank(uci[3]);
+  std::optional<char> maybe_promotion_piece =
+      uci.size() == 5 ? uci[4] : std::optional<char>();
+  if (!maybe_source_file || !maybe_source_rank || !maybe_dest_file ||
+      !maybe_dest_rank) {
+    return {};
+  }
+
+  Square source = util::SquareOf(*maybe_source_rank, *maybe_source_file);
+  Square dest = util::SquareOf(*maybe_dest_rank, *maybe_dest_file);
+
+  // This method is annoyingly complex, so read this here first!
+  //
+  // We're going to assume that a move is quiet if it's not any other category
+  // of move. This means that we might not produce a legal move, but it's up
+  // to the legality tests later on to make sure that this move is legit.
+  //
+  // There are a bunch of cases here that we have to handle. They are encoded
+  // in this decision tree:
+  // 1. Is the moving piece a pawn?
+  //   1.1. Is the moving square two squares straight ahead? => DoublePawnPush
+  //   1.2. Is the moving square a legal attack for a pawn?
+  //     1.2.1. Is the destination square on a promotion rank? =>
+  //     PromotionCapture
+  //     1.2.2. Is the destination square the en-passant square?
+  //     => EnPassant
+  //     1.2.3. else => Capture
+  //   1.3. Is the destination square on a promotion rank? =? Promotion
+  //   1.4. else => Quiet
+  // 2. Is the moving piece a king?
+  //   2.1. Is the target the square to the right of the kingside rook? =>
+  //   KingsideCastle
+  //   2.2. Is the target the square to the right of the queenside rook? =>
+  //   QueensideCastle
+  //   2.3. Is there piece on the target square? => Capture
+  //   2.4. else => Quiet
+  // 3. Is there a piece on the target square? => Capture
+  // 4. else => Quiet
+  //
+  // Whew!
+  auto dest_piece = PieceAt(dest);
+  auto moving_piece = PieceAt(source);
+  if (!moving_piece) {
+    return {};
+  }
+
+  // 1. Is the moving piece a pawn?
+  if (moving_piece->kind() == kPawn) {
+    Direction pawn_dir =
+        side_to_move_ == kWhite ? kDirectionNorth : kDirectionSouth;
+    Bitboard promo_rank = side_to_move_ == kWhite ? kBBRank8 : kBBRank1;
+
+    // 1.1. Is the moving square two squares straight ahead?
+    Square double_pawn_square =
+        util::Towards(util::Towards(source, pawn_dir), pawn_dir);
+    if (double_pawn_square == dest) {
+      return Move::DoublePawnPush(source, dest);
+    }
+
+    // 1.2. Is the moving square a legal attack for a pawn?
+    if (attacks::PawnAttacks(source, side_to_move_).Test(dest)) {
+      // 1.2.1. Is the destination square on a promotion rank?
+      if (promo_rank.Test(dest)) {
+        if (!maybe_promotion_piece) {
+          return {};
+        }
+
+        auto promo_piece = util::CharToPiece(*maybe_promotion_piece);
+        if (!promo_piece) {
+          return {};
+        }
+
+        return Move::PromotionCapture(source, dest, *promo_piece);
+      } else if (dest == EnPassantSquare()) {
+        // 1.2.2. Is the destination square the en-passant square?
+        return Move::EnPassant(source, dest);
+      } else {
+        // 1.2.3. Else, it's a capture.
+        return Move::Capture(source, dest);
+      }
+    }
+
+    // 1.3. Is the destination square on a promotion rank?
+    if (promo_rank.Test(dest)) {
+      if (!maybe_promotion_piece) {
+        return {};
+      }
+
+      auto promo_piece = util::CharToPiece(*maybe_promotion_piece);
+      if (!promo_piece) {
+        return {};
+      }
+
+      return Move::Promotion(source, dest, *promo_piece);
+    } else {
+      // 1.4. Else, it's a quiet move.
+      return Move::Quiet(source, dest);
+    }
+  }
+
+  // 2. Is the moving piece a king?
+  if (moving_piece->kind() == kKing) {
+    Square kingside_rook_adjacent =
+        side_to_move_ == kWhite ? Square::G1 : Square::G8;
+    Square queenside_rook_adjacent =
+        side_to_move_ == kWhite ? Square::C1 : Square::C8;
+    Square king_start = side_to_move_ == kWhite ? Square::E1 : Square::E8;
+    if (source == king_start) {
+      // 2.1. Is the target of the square to the left of the kingside rook?
+      if (dest == kingside_rook_adjacent) {
+        return Move::KingsideCastle(source, dest);
+      }
+
+      // 2.2. Is the target the square to the right of the queenside rook?
+      if (dest == queenside_rook_adjacent) {
+        return Move::QueensideCastle(source, dest);
+      }
+    }
+
+    // 2.3 Is there a piece on the target square?
+    if (dest_piece) {
+      return Move::Capture(source, dest);
+    }
+
+    // 2.4 Else, it's quiet.
+    return Move::Quiet(source, dest);
+  }
+
+  // 3. Is there a piece on the target square?
+  if (dest_piece) {
+    return Move::Capture(source, dest);
+  }
+
+  // 4. else, it's quiet.
+  return Move::Quiet(source, dest);
+}
+
 }  // namespace apollo

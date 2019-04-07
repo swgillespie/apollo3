@@ -214,3 +214,54 @@ TEST(PositionPinTest, KingPin) {
   Position p("8/8/3r4/8/3K4/8/8/8 w - - 0 1");
   ASSERT_FALSE(p.IsAbsolutelyPinned(apollo::kWhite, Square::D4));
 }
+
+TEST(PositionUciTest, UciPawns) {
+  Position p("8/8/8/8/8/2p5/1P6/8 w - - 0 1");
+  ASSERT_EQ(Move::Quiet(Square::B2, Square::B3), p.MoveFromUci("b2b3"));
+  ASSERT_EQ(Move::DoublePawnPush(Square::B2, Square::B4),
+            p.MoveFromUci("b2b4"));
+  ASSERT_EQ(Move::Capture(Square::B2, Square::C3), p.MoveFromUci("b2c3"));
+}
+
+TEST(PositionUciTest, UciPromotion) {
+  Position p("4p3/3P4/8/8/8/8/8/8 w - - 0 1");
+  ASSERT_EQ(Move::Promotion(Square::D7, Square::D8, apollo::kKnight),
+            p.MoveFromUci("d7d8n"));
+  ASSERT_EQ(Move::Promotion(Square::D7, Square::D8, apollo::kBishop),
+            p.MoveFromUci("d7d8b"));
+  ASSERT_EQ(Move::Promotion(Square::D7, Square::D8, apollo::kRook),
+            p.MoveFromUci("d7d8r"));
+  ASSERT_EQ(Move::Promotion(Square::D7, Square::D8, apollo::kQueen),
+            p.MoveFromUci("d7d8q"));
+
+  ASSERT_EQ(Move::PromotionCapture(Square::D7, Square::E8, apollo::kKnight),
+            p.MoveFromUci("d7e8n"));
+  ASSERT_EQ(Move::PromotionCapture(Square::D7, Square::E8, apollo::kBishop),
+            p.MoveFromUci("d7e8b"));
+  ASSERT_EQ(Move::PromotionCapture(Square::D7, Square::E8, apollo::kRook),
+            p.MoveFromUci("d7e8r"));
+  ASSERT_EQ(Move::PromotionCapture(Square::D7, Square::E8, apollo::kQueen),
+            p.MoveFromUci("d7e8q"));
+}
+
+TEST(PositionUciTest, UciKings) {
+  Position p("8/8/8/8/8/8/5n2/R3K2R w - - 0 1");
+  ASSERT_EQ(Move::KingsideCastle(Square::E1, Square::G1),
+            p.MoveFromUci("e1g1"));
+  ASSERT_EQ(Move::QueensideCastle(Square::E1, Square::C1),
+            p.MoveFromUci("e1c1"));
+  ASSERT_EQ(Move::Quiet(Square::E1, Square::E2), p.MoveFromUci("e1e2"));
+  ASSERT_EQ(Move::Capture(Square::E1, Square::F2), p.MoveFromUci("e1f2"));
+}
+
+TEST(PositionUciTest, UciSliding) {
+  Position p("8/8/8/4b3/8/2B5/8/8 w - - 0 1");
+  ASSERT_EQ(Move::Quiet(Square::C3, Square::D4), p.MoveFromUci("c3d4"));
+  ASSERT_EQ(Move::Capture(Square::C3, Square::E5), p.MoveFromUci("c3e5"));
+}
+
+TEST(PositionUciTest, UciBugCastle) {
+  Position p("rr6/p1pkp2p/3n1p2/1N2pp2/1QP1q3/5N2/PP3PPP/3R1K1R w - - 0 1");
+  // This sohuld not be parsed as a queenide castle.
+  ASSERT_EQ(Move::Quiet(Square::D7, Square::C8), p.MoveFromUci("d7c8"));
+}

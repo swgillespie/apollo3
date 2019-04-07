@@ -5,6 +5,7 @@ set(APOLLO_LIB_SOURCES
   position.cc
   evaluators/shannon_evaluator.cc
   search/searcher.cc
+  uci.cc
   zobrist.cc
 )
 

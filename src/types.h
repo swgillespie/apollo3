@@ -126,7 +126,7 @@ inline std::ostream& operator<<(std::ostream& os, Color c) {
   return os;
 }
 
-constexpr std::array<Color, kColorLast> kColors = { kWhite, kBlack };
+constexpr std::array<Color, kColorLast> kColors = {kWhite, kBlack};
 
 enum PieceKind {
   kPieceFirst = -1,

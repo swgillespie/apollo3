@@ -2,8 +2,10 @@
 
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include "log.h"
 #include "types.h"
