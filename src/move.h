@@ -131,6 +131,10 @@ class Move {
   }
 
   std::string AsUci() const {
+    if (IsNull()) {
+      return "0000";
+    }
+
     std::stringstream str;
     str << util::SquareString(Source());
     str << util::SquareString(Destination());

@@ -265,3 +265,9 @@ TEST(PositionUciTest, UciBugCastle) {
   // This sohuld not be parsed as a queenide castle.
   ASSERT_EQ(Move::Quiet(Square::D7, Square::C8), p.MoveFromUci("d7c8"));
 }
+
+TEST(PositionCheckmateTest, CheckmateBug) {
+  Position p("8/3r2k1/p3R3/P1B2NNp/1PP3pK/8/3R2PP/8 b - - 0 50");
+  ASSERT_FALSE(p.IsCheckmate(apollo::kBlack));
+  ASSERT_TRUE(p.IsLegal(Move::Quiet(Square::G7, Square::H8)));
+}

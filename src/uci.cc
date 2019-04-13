@@ -104,8 +104,7 @@ void UciServer::HandlePosition(const std::string& line) {
         log_ << "position: applying move: " << *parsed_move << std::endl;
         pos_.MakeMove(*parsed_move);
         log_ << pos_ << std::endl;
-        log_ << "castle? " << std::boolalpha << parsed_move->IsCastle()
-             << std::endl;
+        log_ << pos_.AsFen() << std::endl;
       } else {
         log_ << "position: move " << move << " is invalid" << std::endl;
       }

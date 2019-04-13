@@ -283,6 +283,10 @@ bool Position::IsCheck(Color to_move) const {
   return check;
 }
 
+bool Position::IsCheckmate(Color to_move) const {
+  return IsCheck(to_move) && LegalMoves().size() == 0;
+}
+
 bool Position::IsAbsolutelyPinned(Color to_move, Square sq) const {
   auto maybe_pinned_piece = PieceAt(sq);
   if (!maybe_pinned_piece) {
@@ -695,6 +699,16 @@ std::vector<Move> Position::PseudolegalMoves() const {
   movegen::GeneratePseudolegalMoves(*this, moves);
   moves.shrink_to_fit();
   return moves;
+}
+
+std::vector<Move> Position::LegalMoves() const {
+  std::vector<Move> legal_moves;
+  for (Move mov : PseudolegalMoves()) {
+    if (IsLegalGivenPseudolegal(mov)) {
+      legal_moves.push_back(mov);
+    }
+  }
+  return legal_moves;
 }
 
 void Position::Dump(std::ostream& out) const {

@@ -8,17 +8,23 @@ namespace apollo::search {
 SearchResult Searcher::Search(Position& pos, int depth) {
   nodes_ = 0;
   Move best_move = Move::Null();
+  bool seen_a_legal_move = false;
   double best_score = -std::numeric_limits<double>::infinity();
   double alpha = best_score;
   double beta = -best_score;
   for (Move mov : pos.PseudolegalMoves()) {
+    if (!pos.IsLegalGivenPseudolegal(mov)) {
+      continue;
+    }
+
     pos.MakeMove(mov);
     double score = -AlphaBeta(pos, -beta, -alpha, depth - 1);
     pos.UnmakeMove();
     if (score > alpha) {
       alpha = score;
     }
-    if (score > best_score) {
+    if (score > best_score || !seen_a_legal_move) {
+      seen_a_legal_move = true;
       best_score = score;
       best_move = mov;
     }
@@ -34,6 +40,10 @@ double Searcher::AlphaBeta(Position& pos, double alpha, double beta,
   }
 
   for (Move mov : pos.PseudolegalMoves()) {
+    if (!pos.IsLegalGivenPseudolegal(mov)) {
+      continue;
+    }
+
     pos.MakeMove(mov);
     double score = -AlphaBeta(pos, -beta, -alpha, depth - 1);
     pos.UnmakeMove();

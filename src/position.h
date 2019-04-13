@@ -145,6 +145,7 @@ class Position {
 
   Bitboard SquaresAttacking(Color to_move, Square sq) const;
   bool IsCheck(Color to_move) const;
+  bool IsCheckmate(Color to_move) const;
 
   // Pin detection
   bool IsAbsolutelyPinned(Color to_move, Square sq) const;
@@ -161,6 +162,7 @@ class Position {
   void UnmakeMove();
 
   std::vector<Move> PseudolegalMoves() const;
+  std::vector<Move> LegalMoves() const;
 
   void Dump(std::ostream& out) const;
 
@@ -168,9 +170,6 @@ class Position {
 
  private:
   friend class FenParser;
-
-  // Move legality
-  bool IsLegalCheck(Move mov) const;
 
   Bitboard SquareAttacks(Square sq) const;
 

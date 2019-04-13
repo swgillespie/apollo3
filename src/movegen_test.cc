@@ -111,3 +111,9 @@ TEST(MoveGenTest, CastleWithNoRook) {
   ASSERT_NO_FATAL_FAILURE(
       AssertDoesNotHaveMove(p, Move::KingsideCastle(Square::E1, Square::G1)));
 }
+
+TEST(MoveGenTest, CheckKing) {
+  Position p("8/3r2k1/p3R3/P1B2NNp/1PP3pK/8/3R2PP/8 b - - 0 50");
+  ASSERT_NO_FATAL_FAILURE(
+      AssertHasMove(p, Move::Quiet(Square::G7, Square::H8)));
+}
